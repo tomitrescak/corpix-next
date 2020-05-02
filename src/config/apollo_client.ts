@@ -4,7 +4,9 @@ import { HttpLink } from "apollo-link-http";
 import { BatchHttpLink } from "apollo-link-batch-http";
 import fetch from "isomorphic-unfetch";
 
-const URL = process.env.VERCEL_URL || "http://localhost:3000";
+const URL = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "http://localhost:3000";
 
 export default function createApolloClient(initialState: any, ctx: any) {
   // The `ctx` (NextPageContext) will only be present on the server.
