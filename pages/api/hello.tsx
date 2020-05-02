@@ -2,5 +2,5 @@
 
 export default (req: any, res: any) => {
   res.statusCode = 200;
-  res.json({ name: "John Doe !+! " });
+  res.json({ name: "John Doe !+! " + process.env.VERCEL_URL });
 };

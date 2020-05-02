@@ -4,13 +4,15 @@ import { HttpLink } from "apollo-link-http";
 import { BatchHttpLink } from "apollo-link-batch-http";
 import fetch from "isomorphic-unfetch";
 
+const URL = process.env.VERCEL_URL || "http://localhost:3000";
+
 export default function createApolloClient(initialState: any, ctx: any) {
   // The `ctx` (NextPageContext) will only be present on the server.
   // use it to extract auth headers (ctx.req) or similar.
   return new ApolloClient({
     ssrMode: Boolean(ctx),
     link: new HttpLink({
-      uri: "http://localhost:3000/api/graphql", // Server URL (must be absolute)
+      uri: `${URL}/api/graphql`, // Server URL (must be absolute)
       credentials: "same-origin", // Additional fetch() options like `credentials` or `headers`
       fetch,
     }),
