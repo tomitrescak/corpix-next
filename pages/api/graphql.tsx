@@ -9,7 +9,7 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    hello: (_parent, _args, _context) => "Hello!: " + Date.now(),
+    hello: (_parent: any, _args: any, _context: any) => "Hello!: " + Date.now(),
   },
 };
 
