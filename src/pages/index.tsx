@@ -27,6 +27,11 @@ function Home() {
           Welcome to <a href="https://nextjs.org">Next.js!!!++</a>
         </Header>
 
+        <Choose>
+          <When condition={true}>true</When>
+          <Otherwise>false</Otherwise>
+        </Choose>
+
         <Header2>Yess!</Header2>
 
         <Hello />

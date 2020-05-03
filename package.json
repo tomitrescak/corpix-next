@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "test": "mocha --require mocha.config --require src/mocha.config.ts src/**/*.test.{ts,tsx}"
   },
   "dependencies": {
     "@apollo/react-ssr": "^3.1.5",
@@ -18,6 +19,7 @@
     "apollo-link-batch-http": "^1.2.14",
     "apollo-link-http": "^1.5.17",
     "apollo-server-micro": "^2.12.0",
+    "babel-plugin-jsx-control-statements": "^4.1.0",
     "graphql": "^15.0.0",
     "isomorphic-unfetch": "^3.0.0",
     "micro-cors": "^0.1.1",
@@ -27,13 +29,21 @@
   },
   "devDependencies": {
     "@babel/core": "^7.9.6",
+    "@babel/register": "^7.9.0",
     "@storybook/addon-actions": "^5.3.18",
     "@storybook/addon-links": "^5.3.18",
     "@storybook/addons": "^5.3.18",
     "@storybook/react": "^5.3.18",
+    "@testing-library/jest-dom": "^5.5.0",
+    "@testing-library/react": "^10.0.4",
     "@types/node": "^13.13.4",
     "@types/react": "^16.9.34",
     "babel-loader": "^8.1.0",
-    "typescript": "^3.8.3"
+    "expect": "^25.5.0",
+    "jsdom": "^16.2.2",
+    "jsdom-global": "^3.0.2",
+    "mocha-jest": "^1.0.0",
+    "typescript": "^3.8.3",
+    "mocha": "^7.1.2"
   }
 }
