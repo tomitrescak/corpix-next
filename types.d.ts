@@ -14,3 +14,5 @@ declare const When: React.FC<Condition>;
 declare const Otherwise: React.FC;
 declare const If: React.FC;
 declare const For: React.FC<ForProps>;
+
+declare type Any = any;

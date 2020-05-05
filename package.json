@@ -8,7 +8,8 @@
     "start": "next start",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "test": "mocha --require mocha.config --require src/mocha.config.ts src/**/*.test.{ts,tsx}"
+    "test": "mocha --require mocha.config --require src/mocha.config.ts src/**/*.test.{ts,tsx}",
+    "cypress:open": "cypress open"
   },
   "dependencies": {
     "@apollo/react-ssr": "^3.1.5",
@@ -39,11 +40,12 @@
     "@types/node": "^13.13.4",
     "@types/react": "^16.9.34",
     "babel-loader": "^8.1.0",
+    "cypress": "^4.5.0",
     "expect": "^25.5.0",
     "jsdom": "^16.2.2",
     "jsdom-global": "^3.0.2",
+    "mocha": "^7.1.2",
     "mocha-jest": "^1.0.0",
-    "typescript": "^3.8.3",
-    "mocha": "^7.1.2"
+    "typescript": "^3.8.3"
   }
 }
