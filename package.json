@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@apollo/react-ssr": "^3.1.5",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
     "@emotion/core": "^10.0.28",
     "@emotion/styled": "^10.0.27",
     "apollo-cache-inmemory": "^1.6.5",
@@ -21,8 +22,11 @@
     "apollo-link-http": "^1.5.17",
     "apollo-server-micro": "^2.12.0",
     "babel-plugin-jsx-control-statements": "^4.1.0",
+    "classnames": "^2.2.6",
+    "date-fns": "2",
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.19.0",
+    "evergreen-ui": "^4.27.4",
     "graphql": "^15.0.0",
     "isomorphic-unfetch": "^3.0.0",
     "marked": "^1.0.0",
@@ -32,7 +36,10 @@
     "next": "9.3.6",
     "prettier": "^2.0.5",
     "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "react-dom": "16.13.1",
+    "react-input-mask": "^2.0.4",
+    "react-router-dom": "^5.1.2",
+    "tsconfig-paths-webpack-plugin": "^3.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.9.6",
@@ -45,17 +52,21 @@
     "@testing-library/react": "^10.0.4",
     "@types/node": "^13.13.4",
     "@types/react": "^16.9.34",
+    "@types/react-router-dom": "^5.1.5",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
     "@typescript-eslint/parser": "^2.31.0",
     "babel-loader": "^8.1.0",
     "cypress": "^4.5.0",
     "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-jsx-control-statements": "^2.2.1",
     "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-react-hooks": "^4.0.0",
     "expect": "^25.5.0",
     "jsdom": "^16.2.2",
     "jsdom-global": "^3.0.2",
     "mocha": "^7.1.2",
     "mocha-jest": "^1.0.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.1-rc"
   }
 }

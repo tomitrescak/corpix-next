@@ -1,4 +1,4 @@
 {
   "presets": ["next/babel"],
-  "plugins": ["jsx-control-statements"]
+  "plugins": ["jsx-control-statements", ["@babel/plugin-proposal-decorators", { "legacy": true }]]
 }
