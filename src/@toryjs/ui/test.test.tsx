@@ -9,19 +9,19 @@ describe('Test', () => {
   it('works with typescript', () => {
     const d = new M();
     d.m = '1';
-    expect(d.m).toBe('r');
+    expect(d.m).toBe('1');
   });
 
   it('tests component with jsx statements', () => {
     const root = render(
-      <div>
+      <div id="1">
         <Choose>
-          <When condition={false}>Tomas</When>
+          <When condition={true}>Tomas</When>
           <Otherwise>Valeria</Otherwise>
         </Choose>
       </div>
     );
     expect(root.getByText('Tomas')).toHaveAttribute('id', '1');
-    expect('it').toBe(false);
+    expect(root.queryByText('Valeria')).not.toBeInTheDocument();
   });
 });

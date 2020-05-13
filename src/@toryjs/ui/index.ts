@@ -28,6 +28,8 @@ export {
 
 export { tryInterpolate } from './utilities/string_utilities';
 
+export { debounce } from './utilities/function_utilities';
+
 // COMPONENTS
 
 export type { ToryComponent } from './components/dynamic_component';

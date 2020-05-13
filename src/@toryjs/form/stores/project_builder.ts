@@ -45,8 +45,5 @@ export function buildProject<T = Any>(
   resolveSchemaReferences(schemaDefinition, schemaDefinition);
   schemaDefinition.$resolved = true;
 
-  const model = {};
-  // buildDataModel(data, schemaDefinition);
-
   return new ProjectModel(formDefinition, schemaDefinition, data);
 }

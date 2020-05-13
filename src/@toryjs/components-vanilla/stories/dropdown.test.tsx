@@ -18,7 +18,7 @@ describe('Vanilla > Dropdown', () => {
     //mock.useFakeTimers();
     const root = testRender(<Async />);
 
-    mock.runAllTimers();
+    // mock.runAllTimers();
     const control = await root.findByLabelText('Async Load');
 
     expect(control.childNodes).toHaveLength(3);
@@ -28,7 +28,7 @@ describe('Vanilla > Dropdown', () => {
   it('renders in cascade based on filter fields', async () => {
     //mock.useFakeTimers();
     const root = testRender(<Cascade />);
-    mock.runAllTimers();
+    // mock.runAllTimers();
 
     const carControl = (await root.findByLabelText('Cars')) as HTMLSelectElement;
 
@@ -53,7 +53,7 @@ describe('Vanilla > Dropdown', () => {
   it('renders in async cascade based on filter fields', async () => {
     //mock.useFakeTimers();
     const root = testRender(<CascadeAsync />);
-    mock.runAllTimers();
+    // mock.runAllTimers();
 
     const carControl = (await root.findByLabelText('Cars')) as HTMLSelectElement;
 
@@ -61,7 +61,7 @@ describe('Vanilla > Dropdown', () => {
     fireEvent.change(carControl, { target: { value: 'skoda' } });
     expect(carControl.value).toBe('skoda');
 
-    mock.runAllTimers();
+    // mock.runAllTimers();
     let makeControl = await root.findByLabelText('Makes');
     expect(makeControl.childNodes).toHaveLength(2);
     expect(root.getByText('Octavia')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('Vanilla > Dropdown', () => {
     // change to bmw
 
     fireEvent.change(carControl, { target: { value: 'bmw' } });
-    mock.runAllTimers();
+    // mock.runAllTimers();
 
     makeControl = await root.findByLabelText('Makes');
     expect(makeControl.childNodes).toHaveLength(3);
@@ -79,7 +79,7 @@ describe('Vanilla > Dropdown', () => {
 
   it('renders disabled', async () => {
     const root = testRender(<Readonly />);
-    mock.runAllTimers();
+    // mock.runAllTimers();
     const input = await root.findByLabelText('Basic');
 
     expect(input).toBeDisabled();

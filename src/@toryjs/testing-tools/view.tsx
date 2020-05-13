@@ -54,7 +54,7 @@ const TestFormRenderer = ({
   context,
   controls
 }: TestProperties) => {
-  schema = { type: 'object', ...schema };
+  schema = { type: 'object', properties: {}, ...schema };
   const formRef = React.useRef<HTMLDivElement>(null);
   const formModel = buildProject(element!, schema, data);
 

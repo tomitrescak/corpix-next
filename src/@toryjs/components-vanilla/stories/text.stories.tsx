@@ -18,8 +18,8 @@ const controls = (owner: Any) => (
     {() => (
       <div style={{ marginTop: '16px' }}>
         <hr />
-        <label>Change Text</label>
-        <input onChange={e => (owner.name = e.currentTarget.value)} value={owner.name} />
+        <label htmlFor="i">Change Text</label>
+        <input id="i" onChange={e => (owner.name = e.currentTarget.value)} value={owner.name} />
       </div>
     )}
   </Observer>

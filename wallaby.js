@@ -54,7 +54,8 @@ module.exports = function (wallaby) {
       });
     },
     teardown: function (wallaby) {
-      global.jsdom();
+      console.log('Teardown ..');
+      // global.jsdom();
     }
   };
 };

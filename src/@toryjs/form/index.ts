@@ -21,4 +21,4 @@ export { JSONSchema } from './json_schema';
 // STORES
 
 export { DataSet } from './stores/dataset_model';
-export { buildProject } from './stores/project';
+export { buildProject } from './stores/project_builder';

@@ -14,7 +14,7 @@ import {
 import { ToryComponent } from '@toryjs/ui';
 import { fireEvent } from '@testing-library/react';
 
-describe.only('Vanilla > Dynamic Component', () => {
+describe('Vanilla > Dynamic Component', () => {
   it('renders a simple control', () => {
     const root = testRender(<Default />);
     expect(root.getByText('Test')).toBeInTheDocument();

@@ -30,6 +30,6 @@ describe('Vanilla > Text', () => {
 
     const item2 = root.getByText('Styled No Label');
     expect(item2).toHaveStyle('font-size: 24px'); // from component
-    expect(item2).toHaveStyle('padding: 18px'); // from container
+    expect(item2).not.toHaveStyle('padding: 18px'); // from container
   });
 });
