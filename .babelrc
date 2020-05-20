@@ -1,4 +1,9 @@
 {
   "presets": ["next/babel"],
-  "plugins": ["jsx-control-statements", ["@babel/plugin-proposal-decorators", { "legacy": true }]]
+  "plugins": ["jsx-control-statements", ["@babel/plugin-proposal-decorators", { "legacy": true }]],
+  "env": {
+    "test": {
+      "plugins": ["babel-plugin-istanbul"]
+    }
+  }
 }

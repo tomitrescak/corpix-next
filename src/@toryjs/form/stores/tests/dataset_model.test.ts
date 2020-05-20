@@ -166,6 +166,7 @@ describe('DataModel', () => {
     });
     model.setValue('address.street', 'new address');
     expect(model.getValue('address.street')).toBe('new address');
+    expect(model.address!.street).toBe('new address');
     expect(fn).toHaveBeenCalledTimes(1);
 
     expect(model.toJS()).toStrictEqual({

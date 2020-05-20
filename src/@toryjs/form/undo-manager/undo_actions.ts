@@ -1,4 +1,3 @@
-import { DataSet } from '../stores/dataset_model';
 import { action } from 'mobx';
 
 export interface IHistoryAction {
@@ -15,7 +14,11 @@ export class UndoAction<T = Any> implements IHistoryAction {
   ) {}
 
   undo() {
-    (this.target as Any)[this.key] = this.undoValue;
+    if (this.undoValue == null) {
+      delete (this.target as Any)[this.key];
+    } else {
+      (this.target as Any)[this.key] = this.undoValue;
+    }
   }
 
   redo() {

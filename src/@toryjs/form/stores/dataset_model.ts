@@ -15,16 +15,15 @@ export class DataSet<T = Any> {
   errors = observable.map({});
   validateBounceTime = 1000;
 
-  undoManager: UndoManager;
   schema: JSONSchema;
-  parent: DataSet | undefined;
+  parent: DataSet<T> | undefined;
 
   keys: string[];
+  um?: UndoManager;
 
-  constructor(schema: JSONSchema, parent?: DataSet, undoManager?: UndoManager) {
+  constructor(schema: JSONSchema, parent?: DataSet<T>) {
     this.schema = schema;
     this.parent = parent;
-    this.undoManager = undoManager || new UndoManager();
     this.keys = Object.keys(this.schema.properties!);
   }
 
@@ -32,6 +31,17 @@ export class DataSet<T = Any> {
 
   get js() {
     return this.toJS();
+  }
+
+  get undoManager(): UndoManager {
+    if (this.um == null) {
+      if (this.parent != null) {
+        this.um = this.parent.undoManager;
+      } else {
+        this.um = new UndoManager();
+      }
+    }
+    return this.um;
   }
 
   // TRANSACTIONS
@@ -42,11 +52,13 @@ export class DataSet<T = Any> {
   setValue(key: Any, value: Any): void {
     const { owner, path } = this.resolvePath(key);
     const resolvedValue = buildValue(owner.getSchema(path), value, owner);
-    this.undoManager.dataSet(owner, path, resolvedValue);
+    this.undoManager.set(owner, path as Any, resolvedValue);
   }
 
-  setError(key: keyof T, error: string | Any) {
-    this.errors.set(key as string, error);
+  @transaction
+  mapSetValue(key: Any, mapKey: string, value: Any): void {
+    const { owner, path } = this.resolvePath(key);
+    this.undoManager.mapSet(owner.getItem(path), mapKey, value);
   }
 
   @transaction
@@ -57,6 +69,12 @@ export class DataSet<T = Any> {
     } else {
       this.undoManager.set(this, 'dirty', value);
     }
+  }
+
+  // NON TRANSACTIONED SETTERS
+
+  setError(key: keyof T, error: string | Any) {
+    this.errors.set(key as string, error);
   }
 
   // GETTERS
@@ -154,7 +172,11 @@ export class DataSet<T = Any> {
     return result;
   }
 
-  private getItem(key: string) {
+  protected getItem(key: string) {
     return (this as Any)[key];
+  }
+
+  protected setItem(key: string, value: Any) {
+    return ((this as Any)[key] = value);
   }
 }

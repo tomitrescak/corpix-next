@@ -1,0 +1,6 @@
+{
+  "projectId": "corpix",
+  "testFiles": "**/*{test,spec}.{js,jsx,ts,tsx}",
+  "experimentalComponentTesting": true,
+  "componentFolder": "src"
+}
