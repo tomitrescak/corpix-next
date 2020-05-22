@@ -7,4 +7,4 @@ import { cleanup } from '@testing-library/react';
 //   global._mocked = true;
 // }
 
-afterEach(cleanup);
+// afterEach(cleanup);

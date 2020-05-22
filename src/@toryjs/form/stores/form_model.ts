@@ -1,12 +1,11 @@
 import { DataSet } from './dataset_model';
-import { observable, toJS } from 'mobx';
+import { observable } from 'mobx';
 import { FormElement, ContainerProps } from '../form_definition';
 import { transaction } from '../undo-manager/manager';
 import { JSONSchema, schemaOfContainerProps, schemaOfFormModel } from '../json_schema';
 import { SchemaUseReference } from './schema_reference';
 import { PropModel } from './prop_model';
 import { buildPropsDataModel } from '../builders/props_builder';
-import { undoable } from '../utilities/decorators';
 
 type SchemaLookup = (control: string) => JSONSchema;
 
@@ -21,9 +20,9 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
   @observable elements: FormModel<Any>[] = [];
   @observable components: FormModel<Any>[] = [];
 
-  @undoable documentation?: string;
-
+  @observable readonly documentation?: string;
   @observable private _isSelected: boolean;
+
   private _schemaLookup?: SchemaLookup;
   private _schemaReferences?: SchemaUseReference[];
 
@@ -44,11 +43,9 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
     this.parent = parent;
     this.documentation = form.documentation;
 
-    this.componentProps = buildPropsDataModel(
-      form.componentProps,
-      this.schemaLookup(this.control),
-      this
-    );
+    if (this.parent == null || !(this.parent instanceof FormModel)) {
+      this._schemaReferences = [];
+    }
 
     this.containerProps = buildPropsDataModel(form.containerProps, schemaOfContainerProps, this);
 
@@ -63,9 +60,11 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
       this.elements = [];
     }
 
-    if (!(this.parent instanceof FormModel)) {
-      this._schemaReferences = [];
-    }
+    this.componentProps = buildPropsDataModel(
+      form.componentProps,
+      this.schemaLookup(this.control),
+      this
+    );
   }
 
   // PROPERTIES
@@ -114,6 +113,11 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
       newParent.addRow('elements', this);
     }
     this.parent = newParent;
+  }
+
+  @transaction
+  addSchemaReference(reference: SchemaUseReference) {
+    this.addRawRow('schemaReferences', reference);
   }
 
   @transaction

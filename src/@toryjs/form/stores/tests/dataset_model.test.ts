@@ -119,17 +119,7 @@ describe('DataModel', () => {
     expect(model.getValue('cars')).toHaveLength(0);
     expect(model.getValue('children')).toHaveLength(0);
 
-    expect(model.toJS()).toEqual({
-      address: {
-        neighbours: undefined,
-        number: undefined,
-        resident: undefined,
-        street: undefined
-      },
-      cars: [],
-      children: [],
-      name: undefined
-    });
+    expect(model.toJS()).toEqual({});
 
     const fn = mock.fn();
     autorun(() => {
@@ -148,14 +138,6 @@ describe('DataModel', () => {
     //expect(model.getArray('children')).toBeUndefined();
 
     expect(model.toJS()).toEqual({
-      address: {
-        neighbours: undefined,
-        number: undefined,
-        resident: undefined,
-        street: undefined
-      },
-      cars: [],
-      children: [],
       name: 'Tomas'
     });
 
@@ -172,13 +154,8 @@ describe('DataModel', () => {
 
     expect(model.toJS()).toStrictEqual({
       address: {
-        neighbours: undefined,
-        number: undefined,
-        resident: undefined,
         street: 'new address'
       },
-      cars: [],
-      children: [],
       name: 'Tomas'
     });
   });
@@ -341,9 +318,7 @@ describe('DataModel', () => {
       cars: Array<{ make: string }>;
     };
     const model = buildDataModel<TestType>({} as Any, schema);
-    expect(model.toJS()).toStrictEqual({
-      cars: []
-    });
+    expect(model.toJS()).toStrictEqual({});
 
     // ADD DEFAULT ROW
     model.addRow('cars', { make: 'Toyota' } as Any);
@@ -353,7 +328,7 @@ describe('DataModel', () => {
 
     model.addRow('cars', {});
     expect(model.toJS()).toStrictEqual({
-      cars: [{ make: 'Toyota' }, { make: undefined }]
+      cars: [{ make: 'Toyota' }, {}]
     });
 
     model.undoManager.undo();
@@ -362,9 +337,7 @@ describe('DataModel', () => {
     });
 
     model.undoManager.undo();
-    expect(model.toJS()).toStrictEqual({
-      cars: []
-    });
+    expect(model.toJS()).toStrictEqual({});
 
     model.undoManager.redo();
     expect(model.toJS()).toStrictEqual({

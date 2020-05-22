@@ -1,9 +1,9 @@
-import { undoable } from '../utilities/decorators';
 import { SchemaModel } from './schema_model';
 import { FormModel } from './form_model';
 import { transaction } from '../undo-manager/manager';
 import { DataSet } from './dataset_model';
 import { JSONSchema } from '../json_schema';
+import { observable } from 'mobx';
 
 const stateModelSchema: JSONSchema = {
   type: 'object',
@@ -17,16 +17,53 @@ const stateModelSchema: JSONSchema = {
 
 export class StateModel extends DataSet {
   // leftPane: prop('outline'),
-  @undoable selectedSchema?: SchemaModel;
-  @undoable selectedElement?: FormModel;
-  @undoable selectedComponent?: FormModel;
-  @undoable leftPane = 'outline';
+  @observable _selectedSchema?: SchemaModel;
+  @observable _selectedElement?: FormModel;
+  @observable _selectedComponent?: FormModel;
+  @observable _leftPane = 'outline';
 
-  // TRANSACTIONS
+  // CONTRUCTOR
 
   constructor(parent: DataSet) {
     super(stateModelSchema, parent);
   }
+
+  //#region PROPERTIES
+  get selectedSchema() {
+    return this._selectedSchema;
+  }
+
+  set selectedSchema(value: SchemaModel | undefined) {
+    this.setRawValue('_selectedSchema', value);
+  }
+
+  get selectedElement() {
+    return this._selectedElement;
+  }
+
+  set selectedElement(value: FormModel | undefined) {
+    this.setRawValue('_selectedElement', value);
+  }
+
+  get selectedComponent() {
+    return this._selectedComponent;
+  }
+
+  set selectedComponent(value: FormModel | undefined) {
+    this.setRawValue('_selectedComponent', value);
+  }
+
+  get leftPane() {
+    return this._leftPane;
+  }
+
+  set leftPane(value: string | undefined) {
+    this.setRawValue('_leftPane', value);
+  }
+
+  //#endregion Properties
+
+  //#region TRANSACTIONS
 
   @transaction selectElement(element?: FormModel) {
     if (!(element instanceof FormModel)) {
@@ -99,9 +136,11 @@ export class StateModel extends DataSet {
 
   @transaction
   deleteActiveSchema() {
-    if (this.selectedSchema && this.selectedSchema.parent) {
+    if (this.selectedSchema && this.selectedSchema.parentSchema) {
       this.selectedSchema.parentSchema.removeSchema(this.selectedSchema);
     }
     this.selectedSchema = undefined;
   }
+
+  //#endregion Transactions
 }

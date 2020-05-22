@@ -1,13 +1,13 @@
 import { resolveSchemaReferences } from '../utilities/model_utilities';
 import { FormElement } from '../form_definition';
 import { JSONSchema } from '../json_schema';
-import { undoable } from '../utilities/decorators';
 import { SchemaModel } from './schema_model';
 import { FormModel } from './form_model';
 import { DataSet } from './dataset_model';
 import { transaction } from '../undo-manager/manager';
 import { StateModel } from './editor_state_model';
 import { buildDataModel } from '../builders/dataset_builder';
+import { observable } from 'mobx';
 
 type SchemaLookup = (control: string) => JSONSchema;
 
@@ -22,7 +22,7 @@ const editorProjectSchema: JSONSchema = {
 };
 
 export class EditorProjectModel extends DataSet<EditorProjectModel> {
-  @undoable dataset: DataSet;
+  @observable _dataset: DataSet;
 
   form: FormModel;
   schema: SchemaModel;
@@ -36,13 +36,15 @@ export class EditorProjectModel extends DataSet<EditorProjectModel> {
     this.schema = new SchemaModel(schema, this);
     this.form = new FormModel(form, this, schemaLookup);
     this.state = new StateModel(this);
-    this.dataset = buildDataModel(data, schema, this);
+    this._dataset = buildDataModel(data, schema, this);
 
     if (this.form != null && this.form.components != null) {
       if (this.form.components!.length > 0) {
         this.state.selectedComponent = this.form.components[0];
       }
     }
+
+    this.undoManager.clear();
   }
 
   // TRANSACTIONS
@@ -76,7 +78,7 @@ export class EditorProjectModel extends DataSet<EditorProjectModel> {
       return;
     }
     const newComponent = current.toJS();
-    newComponent.containerProps.editorLabel = name;
+    newComponent.containerProps!.editorLabel = name;
 
     const index = parent.elements.indexOf(current as Any);
     const newModel = this.form!.addComponent(newComponent);
@@ -101,8 +103,8 @@ export class EditorProjectModel extends DataSet<EditorProjectModel> {
 export function buildEditorProject<T = Any>(
   formDefinition: FormElement,
   schemaDefinition: JSONSchema,
-  data: T = {} as Any,
-  schemaLookup: SchemaLookup
+  schemaLookup: SchemaLookup,
+  data: T = {} as Any
 ) {
   resolveSchemaReferences(schemaDefinition, schemaDefinition);
   schemaDefinition.$resolved = true;

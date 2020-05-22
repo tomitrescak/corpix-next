@@ -102,8 +102,9 @@ export class UndoManager {
 
   @action
   undo() {
-    for (let i = this.head.queue.length - 1; i >= 0; i--) {
-      this.head.queue[i].undo();
+    const queue = this.head.queue;
+    for (let i = queue.length - 1; i >= 0; i--) {
+      queue[i].undo();
     }
 
     if (this.head.previous) {

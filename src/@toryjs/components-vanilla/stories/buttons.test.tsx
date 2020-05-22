@@ -13,7 +13,7 @@ describe('Vanilla > Buttons', () => {
     expect(root.getByText('Button')).toHaveAttribute('type', 'Custom Type');
   });
 
-  it.only('allows to click with string specified handler', () => {
+  it('allows to click with string specified handler', () => {
     const fn = sinon.spy();
     const handlers = {
       click: () => fn()

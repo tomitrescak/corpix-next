@@ -55,7 +55,7 @@ export class DataSet<T = Any> {
   }
 
   @transaction
-  protected setRawValue(key: keyof T, value: Any): void {
+  protected setRawValue(key: string, value: Any): void {
     const { owner, path } = this.resolvePath(key as Any);
     this.undoManager.set(owner, path as Any, value);
   }
@@ -134,6 +134,13 @@ export class DataSet<T = Any> {
   @transaction
   addRow(key: keyof T, row: Any) {
     this.undoManager.push(this.getItem(key as Any), this.buildArrayValue(key, row));
+
+    return row;
+  }
+
+  @transaction
+  addRawRow(key: keyof T, row: Any) {
+    this.undoManager.push(this.getItem(key as Any), row);
 
     return row;
   }

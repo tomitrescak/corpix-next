@@ -1,7 +1,7 @@
-import { JSONSchema, schemaOfContainerProps } from '../../json_schema';
+import { JSONSchema } from '../../json_schema';
 import { FormElement } from '../../form_definition';
 import { buildEditorProject } from '../editor_project_model';
-import { buildPropsDataModel } from '@toryjs/form/builders/props_builder';
+import { buildProject } from '../project_model';
 
 const elementSchema = (props: Any = {}): JSONSchema => ({
   type: 'object',
@@ -16,7 +16,7 @@ const elementSchema = (props: Any = {}): JSONSchema => ({
   properties: { ...props }
 });
 
-describe('Form Keystone', () => {
+describe('Form Model', () => {
   const exampleForm: FormElement = {
     uid: '1',
     control: 'Form',
@@ -90,14 +90,14 @@ describe('Form Keystone', () => {
   };
 
   it('creates json version of the form', () => {
-    const { form } = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
 
     console.log(JSON.stringify(form.toJS(), null, 2));
     expect(form.toJS()).toEqual(exampleForm);
   });
 
   it('findElementById: finds elements by id', () => {
-    const { form } = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     expect(form.components).toHaveLength(1);
 
     // check elements
@@ -106,25 +106,25 @@ describe('Form Keystone', () => {
   });
 
   it('uses prop helper to access atomic props', () => {
-    const { form } = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     expect(form.elements[0].elements[0].componentProps.getValue('text')).toBe('Hello');
-    expect(form.elements[0].elements[0].componentProps.text.value).toBe('Hello');
+    expect(form.elements[0].elements[0].componentProps.text).toBe('Hello');
   });
 
   it('validates prop values', () => {
-    const { form } = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
 
     const el = form.elements[0].elements[0];
     el.componentProps.setValue('text', 1);
     el.componentProps.validate();
 
-    expect(el.componentProps.text.value).toBe(1);
+    expect(el.componentProps.text).toBe(1);
     expect(el.componentProps.getError('text')).toBe('Expected type string but found type integer');
   });
 
   it('can change element to a new parent', () => {
     const schemaLookup = () => defaultSchema;
-    const { form } = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     const rootElement = form;
 
     expect(rootElement.elements[0].elements).toHaveLength(2);
@@ -142,31 +142,13 @@ describe('Form Keystone', () => {
     expect(rootElement.elements[1].elements[0].uid).toBe('3');
   });
 
-  it.only('decorators', () => {
-    function undoable(target: any, propertyKey: string) {
-      Object.defineProperty(target, propertyKey, {
-        get: function () {
-          return 'customFoo';
-        }
-      });
-    }
-
-    class PropModel {
-      @undoable foo?: string;
-    }
-
-    const g = new PropModel();
-    //g.foo = '1';
-    console.log(g.foo);
-  });
-
   it('can undo and redo', () => {
     const schemaLookup = () =>
       elementSchema({
         title: { type: 'string' }
       });
 
-    const parts = buildEditorProject(exampleForm, dataSchema, {}, schemaLookup);
+    const parts = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     const { form, undoManager } = parts;
     const rootElement = form;
 
@@ -183,8 +165,6 @@ describe('Form Keystone', () => {
     expect(rootElement.getValue('documentation')).toBe('new');
 
     // ASSERT ON PROPS
-
-    console.log(rootElement.componentProps.foo);
 
     rootElement.componentProps.setValue('title', 'old');
     expect(rootElement.componentProps.getValue('title')).toBe('old');
@@ -206,11 +186,9 @@ describe('Form Keystone', () => {
      ======================================================== */
 
   it('uses prop helper to access complex props', () => {
-    const project = buildProject(exampleForm, dataSchema, () => {
-      throw new Error('ewewe');
-    });
+    const project = buildProject(exampleForm, dataSchema, {});
 
-    const valueProp = project.form.elements![0].elements![1].props.value;
+    const valueProp = project.form.elements![0].elements![1].componentProps.value;
     // expect(valueProp.type).toBe('source');
     // expect(valueProp.sourceRef!.current.uid).toBe('catId');
     expect(valueProp.source).toBe('category');
@@ -219,17 +197,17 @@ describe('Form Keystone', () => {
   it('allows props to use direct access to .props accessor via proxy', () => {
     const project = buildEditorProject(exampleForm, dataSchema, schemaLookup);
 
-    const element = project.form.rootElement.elements[0].elements[1];
-    expect(element.props.value.source).toEqual('category');
+    const element = project.form.elements[0].elements[1];
+    expect(element.componentProps.value.source).toEqual('category');
 
-    element.props.value = { source: project.schema.getProperty('personal') };
-    expect(element.props.value.source).toEqual('personal');
+    element.componentProps.setValue('value', { source: project.schema.properties!.personal });
+    expect(element.componentProps.value.source).toEqual('personal');
   });
 
   it('changes the number of references when element is deleted', () => {
     const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     expect(form.schemaReferences).toHaveLength(1);
-    form.rootElement.removeElement(form.rootElement.elements[0].elements[1]);
+    form.removeElement(form.elements[0].elements[1]);
     expect(form.schemaReferences).toHaveLength(0);
   });
 
@@ -237,26 +215,25 @@ describe('Form Keystone', () => {
     const { form } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
     expect(form.schemaReferences).toHaveLength(1);
 
-    const valueProp = form.rootElement.elements[0].elements[1].props.value;
-    valueProp.setValue({ handler: 'handler' }, form.rootElement.elements[0].elements[1]); //.changeType('value');
+    form.elements[0].elements[1].componentProps.setValue('value', { handler: 'handler' }); //.changeType('value');
     expect(form.schemaReferences).toHaveLength(0);
   });
 
-  it('changes the number of references when source type changes', async () => {
+  it('changes the number of references when source type changes', () => {
     const { form, schema, undoManager } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
-    const valueProp = form.rootElement.elements[0].elements[1].props.value;
+    const element = form.elements[0].elements[1];
 
-    const personal = schema.getProperty('personal')!;
-    const category = schema.getProperty('category')!;
+    const personal = schema.properties!.personal;
+    const category = schema.properties!.category;
 
     expect(form.schemaReferences.filter(s => s.schema === category)).toHaveLength(1);
 
-    valueProp.setSource(personal, form.rootElement.elements[0].elements[1]);
+    element.componentProps.setValue('value', { source: personal });
 
     expect(form.schemaReferences.filter(s => s.schema === category)).toHaveLength(0);
     expect(form.schemaReferences.filter(s => s.schema === personal)).toHaveLength(1);
 
-    expect(valueProp.source).toBe('personal');
+    expect(element.componentProps.value.source).toBe('personal');
 
     // NOW TEST THE UNDO FLOW
 
@@ -265,38 +242,38 @@ describe('Form Keystone', () => {
     expect(form.schemaReferences.filter(s => s.schema === category)).toHaveLength(1);
     expect(form.schemaReferences.filter(s => s.schema === personal)).toHaveLength(0);
 
-    expect(valueProp.source).toBe('category');
+    expect(element.componentProps.value.source).toBe('category');
   });
 
   it('when a schema is reparented, a new path is automatically calculated', () => {
     const { form, schema } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
 
-    const valueProp = form.rootElement.elements[0].elements[1].props.value!;
+    const element = form.elements[0].elements[1]!;
     // console.log(valueProp)
 
-    expect(valueProp.source).toBe('category');
+    expect(element.componentProps.value.source).toBe('category');
 
-    const schemaFrom = schema.getProperty('category');
-    const schemaTo = schema.getProperty('personal');
+    const schemaFrom = schema.properties!.category;
+    const schemaTo = schema.properties!.personal;
 
     schemaFrom?.changeParent(schemaTo!);
 
-    expect(valueProp.type).toBe('source');
-    expect(valueProp.source).toBe('personal.category');
+    expect(element.componentProps.value.type).toBe('source');
+    expect(element.componentProps.value.source).toBe('personal.category');
   });
 
   it('allows to add a new control', () => {
     const { form, undoManager } = buildEditorProject(exampleForm, dataSchema, schemaLookup);
 
-    form.addComponent({ control: 'Form', uid: '11', props: {} });
-    expect(form.components[2].uid).toBe('11');
+    form.addComponent({ control: 'Form', uid: '11', componentProps: {} });
+    expect(form.components[1].uid).toBe('11');
 
-    form.components[2].setValue('documentation', 'AAA');
-    expect(form.components[2].documentation).toBe('AAA');
+    form.components[1].setValue('documentation', 'AAA');
+    expect(form.components[1].documentation).toBe('AAA');
 
     undoManager.undo();
 
-    expect(form.components[2].documentation).toBeUndefined();
+    expect(form.components[1].documentation).toBeUndefined();
   });
 
   // it('sets and unsets selected element', () => {

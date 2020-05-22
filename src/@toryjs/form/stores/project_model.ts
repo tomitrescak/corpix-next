@@ -22,6 +22,7 @@ export class ProjectModel extends DataSet {
 
     this.form = form;
     this.dataset = buildDataModel(data, schema, this);
+    this.undoManager.clear();
   }
 
   // @transaction

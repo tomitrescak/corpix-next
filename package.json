@@ -8,7 +8,7 @@
     "start": "next start",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "test": "mocha --require mocha.config --require src/mocha.config.ts src/**/*.test.{ts,tsx}",
+    "test": "mocha --require tsconfig-paths/register --require mocha.config --require src/mocha.config.ts src/**/*.test.{ts,tsx}",
     "cypress:open": "cypress open"
   },
   "dependencies": {

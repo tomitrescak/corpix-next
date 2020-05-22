@@ -16,11 +16,7 @@ export class UndoAction<T = Any> implements IHistoryAction {
   }
 
   undo() {
-    if (this.undoValue == null) {
-      delete (this.target as Any)[this.key];
-    } else {
-      (this.target as Any)[this.key] = this.undoValue;
-    }
+    (this.target as Any)[this.key] = this.undoValue;
   }
 
   redo() {
