@@ -11,7 +11,9 @@ export type JSONSchema7TypeName =
   | 'boolean'
   | 'object'
   | 'array'
-  | 'null';
+  | 'null'
+  | 'custom';
+
 export type JSONSchema7Type = JSONSchema7Array[] | boolean | number | null | object | string;
 
 // Workaround for infinite type recursion
@@ -264,6 +266,29 @@ export const schemaOfFormModel: JSONSchema = {
     group: { type: 'string' },
     bound: { type: 'boolean' },
     documentation: { type: 'string' },
-    isSelected: { type: 'boolean' }
+    componentProps: { type: 'custom' },
+    containerProps: { type: 'custom' },
+    elements: {
+      type: 'array',
+      items: {
+        type: 'custom'
+      }
+    },
+    components: {
+      type: 'array',
+      items: {
+        type: 'custom'
+      }
+    }
   }
 };
+
+export const schemaOfProp = (type: JSONSchema7TypeName) =>
+  ({
+    properties: {
+      handler: { type: 'string' },
+      dynamicHandler: { type: 'string' },
+      value: { type },
+      type: { type: 'string' }
+    }
+  } as JSONSchema);

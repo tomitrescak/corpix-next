@@ -40,6 +40,8 @@ export interface ContainerProps {
   readOnly?: boolean;
   children?: any;
 
+  editorLabel?: string;
+
   onMount?: string;
 }
 
@@ -53,8 +55,8 @@ export interface CommonComponentProps {
 
 export interface FormElement<P = Any> extends FormElementBase {
   parent?: FormElement;
-  componentProps: CommonComponentProps & P;
-  containerProps: ContainerProps;
+  componentProps?: CommonComponentProps & P;
+  containerProps?: ContainerProps;
   elements?: FormElement[];
   components?: FormElement[];
 }

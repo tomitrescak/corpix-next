@@ -1,6 +1,6 @@
-import { FormElement } from '../form_definition';
 import { JSONSchema } from '../json_schema';
-import { ProjectModel } from './project_model';
+
+type SchemaLookup = (control: string) => JSONSchema;
 
 function findDefinition(schema: JSONSchema, item: JSONSchema) {
   const definition = schema.definitions![item.$ref!.split('/')[2]];
@@ -35,15 +35,4 @@ export function resolveSchemaReferences(schema: JSONSchema, current: JSONSchema 
   }
 
   return schema;
-}
-
-export function buildProject<T = Any>(
-  formDefinition: FormElement,
-  schemaDefinition: JSONSchema,
-  data: T = {} as Any
-) {
-  resolveSchemaReferences(schemaDefinition, schemaDefinition);
-  schemaDefinition.$resolved = true;
-
-  return new ProjectModel(formDefinition, schemaDefinition, data);
 }

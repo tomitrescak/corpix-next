@@ -1,11 +1,12 @@
 import { JSONSchema } from '../json_schema';
-import { DataSet } from './dataset_model';
+import { DataSet } from '../stores/dataset_model';
 import { observable, decorate } from 'mobx';
-import { UndoManager } from '../undo-manager/manager';
 import { buildValue } from '../utilities/dataset_utilities';
 
+// STANDARD BUILDER
+
 const datasets: Array<{ schema: JSONSchema; DataSet: Any }> = [];
-export function buildDataSet<T = Any>(schema: JSONSchema, undoManager?: UndoManager) {
+export function buildDataSet<T = Any>(schema: JSONSchema) {
   let res = datasets.find(c => c.schema === schema);
   if (res != null) {
     return res.DataSet;
@@ -13,7 +14,7 @@ export function buildDataSet<T = Any>(schema: JSONSchema, undoManager?: UndoMana
 
   class ExtendedDataSet extends DataSet<T> {
     constructor(obj: T, parent: DataSet) {
-      super(schema, parent, undoManager);
+      super(schema, parent);
       if (obj == null) {
         return;
       }
@@ -40,6 +41,6 @@ export function buildDataModel<T>(
   schema: JSONSchema,
   parent?: DataSet | undefined
 ): DataSet<T> & Readonly<T> {
-  const CustomDataset = buildDataSet(schema, parent ? parent.undoManager : undefined);
+  const CustomDataset = buildDataSet(schema);
   return new CustomDataset(data, parent);
 }

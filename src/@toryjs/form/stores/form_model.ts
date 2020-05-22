@@ -1,9 +1,12 @@
 import { DataSet } from './dataset_model';
-import { observable } from 'mobx';
+import { observable, toJS } from 'mobx';
 import { FormElement, ContainerProps } from '../form_definition';
 import { transaction } from '../undo-manager/manager';
-import { JSONSchema, schemaOfContainerProps } from '../json_schema';
-import { buildDataModel } from './dataset_builder';
+import { JSONSchema, schemaOfContainerProps, schemaOfFormModel } from '../json_schema';
+import { SchemaUseReference } from './schema_reference';
+import { PropModel } from './prop_model';
+import { buildPropsDataModel } from '../builders/props_builder';
+import { undoable } from '../utilities/decorators';
 
 type SchemaLookup = (control: string) => JSONSchema;
 
@@ -13,33 +16,56 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
   tuple?: string;
   group?: string;
   bound?: boolean;
-  @observable documentation?: string;
-  @observable componentProps: DataSet<P>;
+  @observable componentProps: DataSet<P> & { [index: string]: PropModel };
   @observable containerProps: DataSet<ContainerProps>;
   @observable elements: FormModel<Any>[] = [];
-  @observable isSelected: boolean;
+  @observable components: FormModel<Any>[] = [];
 
-  parent: FormModel;
+  @undoable documentation?: string;
 
+  @observable private _isSelected: boolean;
   private _schemaLookup?: SchemaLookup;
+  private _schemaReferences?: SchemaUseReference[];
 
   // CONSTRUCTOR
 
-  constructor(form: FormElement, parent: FormModel, schemaLookup?: SchemaLookup) {
-    super({}, parent);
+  constructor(form: FormElement, parent: DataSet, schemaLookup?: SchemaLookup) {
+    super(schemaOfFormModel, parent);
 
     this._schemaLookup = schemaLookup;
+    this._isSelected = false;
 
     this.uid = form.uid;
     this.control = form.control;
     this.tuple = form.tuple;
     this.group = form.group;
     this.bound = form.bound;
-    this.documentation = form.documentation;
-    this.componentProps = buildDataModel(form.componentProps, this.schemaLookup(this.control));
-    this.containerProps = buildDataModel(form.containerProps, schemaOfContainerProps);
-    this.isSelected = false;
+
     this.parent = parent;
+    this.documentation = form.documentation;
+
+    this.componentProps = buildPropsDataModel(
+      form.componentProps,
+      this.schemaLookup(this.control),
+      this
+    );
+
+    this.containerProps = buildPropsDataModel(form.containerProps, schemaOfContainerProps, this);
+
+    if (form.components) {
+      this.components = form.components.map(e => new FormModel(e, this));
+    } else {
+      this.components = [];
+    }
+    if (form.elements) {
+      this.elements = form.elements.map(e => new FormModel(e, this));
+    } else {
+      this.elements = [];
+    }
+
+    if (!(this.parent instanceof FormModel)) {
+      this._schemaReferences = [];
+    }
   }
 
   // PROPERTIES
@@ -48,8 +74,27 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
     return this.parent == null || !(this.parent instanceof FormModel) ? this : this.parent.rootForm;
   }
 
+  get parentElement(): FormModel {
+    if (this.parent != null && this.parent instanceof FormModel) {
+      return this.parent;
+    }
+    throw new Error('There is no parent form');
+  }
+
   get schemaLookup(): SchemaLookup {
     return this.rootForm._schemaLookup!;
+  }
+
+  get schemaReferences(): SchemaUseReference[] {
+    return this.rootForm._schemaReferences!;
+  }
+
+  get isSelected() {
+    return this._isSelected;
+  }
+
+  set isSelected(value: boolean) {
+    this.setRawValue('_isSelected' as Any, value);
   }
 
   // TRANSACTIONS
@@ -60,7 +105,7 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
       return;
     }
     // remove from current
-    this.parent.removeElement(this);
+    this.parentElement.removeElement(this);
 
     // add to new parent
     if (index != null) {
@@ -69,6 +114,34 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
       newParent.addRow('elements', this);
     }
     this.parent = newParent;
+  }
+
+  @transaction
+  removePropReferences(prop: PropModel) {
+    const invalidReferences = this.schemaReferences.filter(f => f.prop == prop);
+    for (let reference of invalidReferences) {
+      this.undoManager.removeByValue(this.schemaReferences, reference);
+    }
+  }
+
+  @transaction
+  removeElementReferences(element: FormModel) {
+    const invalidReferences = this.schemaReferences.filter(f => f.element == element);
+    for (let reference of invalidReferences) {
+      this.undoManager.removeByValue(this.schemaReferences, reference);
+    }
+  }
+
+  @transaction
+  addComponent(element: FormElement): FormModel {
+    return this.addRow('components', new FormModel(element, this));
+  }
+
+  @transaction
+  removeComponent(element: FormModel<Any>) {
+    this.rootForm.removeElementReferences(element);
+    const index = this.elements.findIndex(e => e === element);
+    this.removeRowByIndex('components', index);
   }
 
   @transaction
@@ -82,40 +155,46 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
   }
 
   @transaction
-  removeElement(element: FormElement) {
+  removeElement(element: FormModel<Any>) {
     // remove from references
-    this.form.schemaReferences = this.form.schemaReferences.filter(f => f.element !== element);
+    this.rootForm.removeElementReferences(element);
 
     const index = this.elements.findIndex(e => e === element);
-    this.elementsRefs!.splice(index, 1);
+    this.removeRowByIndex('elements', index);
   }
 
   @transaction
   removeElementByIndex(index: number) {
     // remove from references
     const element = this.elements[index];
-    this.form.schemaReferences = this.form.schemaReferences.filter(f => f.element !== element);
-    this.elementsRefs!.splice(index, 1);
+    this.rootForm.removeElementReferences(element);
+    this.removeRowByIndex('elements', index);
   }
 
   @transaction
-  setSelected(selected: boolean) {
-    this.isSelected = selected;
+  replaceElement(index: number, element: FormElement) {
+    const newElement = new FormModel(element, this, this.schemaLookup);
+    this.replaceRow('elements', index, newElement);
   }
 
   // UTILITIES
 
+  findElementById(id: string): FormModel | undefined {
+    if (this.uid === id) {
+      return this;
+    }
+    if (this.elements != null) {
+      for (let element of this.elements) {
+        const child = element.findElementById(id);
+        if (child) {
+          return child;
+        }
+      }
+    }
+    return undefined;
+  }
+
   toJS(): FormElement {
-    return {
-      uid: this.uid,
-      control: this.control,
-      tuple: this.tuple,
-      group: this.group,
-      bound: this.bound,
-      documentation: this.documentation,
-      componentProps: this.componentProps.toJS(),
-      containerProps: this.containerProps.toJS(),
-      elements: this.elements.map(e => e.toJS())
-    };
+    return super.toJS();
   }
 }

@@ -16,19 +16,17 @@ export class SchemaModel extends DataSet<SchemaModel> {
     k => k != 'items' && arrays.indexOf(k) === -1 && objects.indexOf(k) === -1
   );
 
-  // inherited
-
-  parent: SchemaModel | undefined;
-
   // Schema Properties
 
   // private
 
-  @observable _properties?: { [key: string]: SchemaModel };
-  @observable _definitions?: { [key: string]: SchemaModel };
-  @observable _allOf?: SchemaModel[];
-  @observable _anyOf?: SchemaModel[];
-  @observable _oneOf?: SchemaModel[];
+  @observable private _properties?: { [key: string]: SchemaModel };
+  @observable private _definitions?: { [key: string]: SchemaModel };
+  @observable private _allOf?: SchemaModel[];
+  @observable private _anyOf?: SchemaModel[];
+  @observable private _oneOf?: SchemaModel[];
+  @observable private _isSelected = false;
+
   @observable reference?: SchemaModel;
 
   // public
@@ -64,7 +62,7 @@ export class SchemaModel extends DataSet<SchemaModel> {
   @observable errorMessage?: string;
   @observable format?: string;
 
-  @observable title?: string;
+  @observable title: string = '';
   @observable description?: string;
   @observable default?: JSONSchema7Type;
   @observable readOnly?: boolean;
@@ -72,7 +70,7 @@ export class SchemaModel extends DataSet<SchemaModel> {
 
   // CONTRUCTOR
 
-  constructor(schema: JSONSchema, parent?: SchemaModel) {
+  constructor(schema: JSONSchema, parent?: DataSet) {
     super(schemaOfJsonSchema, parent);
 
     this.parent = parent;
@@ -125,6 +123,13 @@ export class SchemaModel extends DataSet<SchemaModel> {
       : this.parent.rootSchema;
   }
 
+  get parentSchema(): SchemaModel | undefined {
+    if (this.parent != null && this.parent instanceof SchemaModel) {
+      return this.parent;
+    }
+    return undefined;
+  }
+
   get properties() {
     return this.owner._properties;
   }
@@ -143,6 +148,14 @@ export class SchemaModel extends DataSet<SchemaModel> {
 
   get oneOf() {
     return this.owner._oneOf;
+  }
+
+  get isSelected() {
+    return this._isSelected;
+  }
+
+  set isSelected(value: boolean) {
+    this.setRawValue('_isSelected' as Any, value);
   }
 
   // TRANSACTIONS
@@ -188,11 +201,12 @@ export class SchemaModel extends DataSet<SchemaModel> {
 
   @transaction
   changeParent(newParent: SchemaModel) {
-    if (this.parent == null) {
+    // cannot remove top level schema
+    if (this.parentSchema == null) {
       return;
     }
     // remove from current
-    this.parent.removeSchema(this);
+    this.parentSchema.removeSchema(this);
 
     let collection = newParent.type === 'array' ? newParent.items : newParent;
 
@@ -219,6 +233,24 @@ export class SchemaModel extends DataSet<SchemaModel> {
       return this.getItem(key);
     }
     return this.owner.getItem(key);
+  }
+
+  findSchema(id: string): SchemaModel | undefined {
+    if (this.properties == null) {
+      return undefined;
+    }
+    for (let key of Object.keys(this.properties)) {
+      if (this.properties[key].uid === id) {
+        return this.properties[key];
+      }
+      if (this.properties[key].properties != null) {
+        const schema = this.properties[key].findSchema(id);
+        if (schema) {
+          return schema;
+        }
+      }
+    }
+    return undefined;
   }
 
   toJS() {

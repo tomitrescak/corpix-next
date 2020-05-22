@@ -1,6 +1,6 @@
 import { JSONSchema } from '../json_schema';
 import { DataSet } from '../stores/dataset_model';
-import { buildDataModel } from '../stores/dataset_builder';
+import { buildDataModel } from '../builders/dataset_builder';
 
 function isSimpleType(schema: JSONSchema) {
   return !schema.type?.match(/(object|array)/);
@@ -31,7 +31,10 @@ export function buildJs(value: Any): Any {
   return value;
 }
 
-export function buildValue(itemSchema: JSONSchema, value: Any, parent: DataSet) {
+export function buildValue(itemSchema: JSONSchema, value: Any, parent?: DataSet) {
+  if (itemSchema.type === 'custom') {
+    return value;
+  }
   if (isSimpleType(itemSchema)) {
     if (value !== '' && value != null) {
       if (itemSchema.type === 'number') {
@@ -51,6 +54,7 @@ export function buildValue(itemSchema: JSONSchema, value: Any, parent: DataSet) 
     }
     return value.map((v: Any) => buildValue(itemSchema.items!, v, parent));
   } else {
+    // it is a simple object
     return buildDataModel(value, itemSchema, parent);
   }
 }

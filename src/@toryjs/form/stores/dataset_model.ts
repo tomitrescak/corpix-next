@@ -1,5 +1,4 @@
 import { observable } from 'mobx';
-import { debounce } from '@toryjs/ui';
 
 import { UndoManager, transaction } from '../undo-manager/manager';
 import { JSONSchema } from '../json_schema';
@@ -16,12 +15,12 @@ export class DataSet<T = Any> {
   validateBounceTime = 1000;
 
   schema: JSONSchema;
-  parent: DataSet<T> | undefined;
+  parent: DataSet | undefined;
 
   keys: string[];
   um?: UndoManager;
 
-  constructor(schema: JSONSchema, parent?: DataSet<T>) {
+  constructor(schema: JSONSchema, parent?: DataSet) {
     this.schema = schema;
     this.parent = parent;
     this.keys = Object.keys(this.schema.properties!);
@@ -49,10 +48,16 @@ export class DataSet<T = Any> {
   // setValue(key: keyof T, value: Any): void;
   // setValue(key: string, value: Any): void;
   @transaction
-  setValue(key: Any, value: Any): void {
-    const { owner, path } = this.resolvePath(key);
+  setValue(key: keyof T, value: Any): void {
+    const { owner, path } = this.resolvePath(key as Any);
     const resolvedValue = buildValue(owner.getSchema(path), value, owner);
     this.undoManager.set(owner, path as Any, resolvedValue);
+  }
+
+  @transaction
+  protected setRawValue(key: keyof T, value: Any): void {
+    const { owner, path } = this.resolvePath(key as Any);
+    this.undoManager.set(owner, path as Any, value);
   }
 
   @transaction
@@ -129,11 +134,18 @@ export class DataSet<T = Any> {
   @transaction
   addRow(key: keyof T, row: Any) {
     this.undoManager.push(this.getItem(key as Any), this.buildArrayValue(key, row));
+
+    return row;
   }
 
   @transaction
   insertRow(key: keyof T, index: number, row: Any) {
     this.undoManager.insert(this.getItem(key as Any), this.buildArrayValue(key, row), index);
+  }
+
+  @transaction
+  replaceRow(key: keyof T, index: number, row: Any) {
+    this.undoManager.replace(this.getItem(key as Any), this.buildArrayValue(key, row), index);
   }
 
   @transaction
@@ -167,7 +179,28 @@ export class DataSet<T = Any> {
   toJS() {
     const result: Any = {};
     for (let key of this.keys) {
-      result[key] = buildJs(this.getItem(key));
+      const item = buildJs(this.getItem(key));
+      // skip undefined items
+      if (item == null) {
+        continue;
+      }
+
+      // add only non empty arrays
+      if (Array.isArray(item)) {
+        if (item.length > 0) {
+          result[key] = item;
+        }
+      }
+      // add only non empty objects
+      else if (typeof item === 'object') {
+        if (Object.keys(item).length > 0) {
+          result[key] = item;
+        }
+      }
+      // add only non empty strings
+      else if (item !== '') {
+        result[key] = item;
+      }
     }
     return result;
   }

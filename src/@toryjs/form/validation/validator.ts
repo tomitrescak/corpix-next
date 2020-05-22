@@ -409,6 +409,9 @@ let JsonValidators = {
     }
   },
   type(report: Report, schema: JSONSchema, json: Any) {
+    if (schema.type === 'custom') {
+      return;
+    }
     // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.2
     let jsonType = Utils.whatIs(json);
     if (typeof schema.type === 'string') {
@@ -624,6 +627,10 @@ export class Validator {
     const dataset = owner.toJS();
 
     const isValid = this.isValid(report, schema, dataset);
+
+    console.log(schema);
+    console.log(isValid);
+    console.log(report.errors);
 
     if (report.errors.length) {
       owner.setError('allErrors', report.errors);

@@ -65,7 +65,6 @@ export class UndoManager {
 
   set<T>(target: T, key: keyof T, value: Any) {
     this.transaction?.queue.push(new Actions.UndoAction(target, key, value, target[key]));
-    target[key] = value;
   }
 
   mapSet(target: Map<string, string>, key: string, value: Any) {
@@ -73,7 +72,7 @@ export class UndoManager {
     target.set(key, value);
   }
 
-  push(target: Array<Any>, value: Any) {
+  push<B>(target: Array<B>, value: B) {
     this.transaction?.queue.push(new Actions.UndoPushAction(target, value));
   }
 
@@ -83,6 +82,10 @@ export class UndoManager {
 
   insert(target: Array<Any>, value: Any, index: number) {
     this.transaction?.queue.push(new Actions.UndoInsertAction(target, value, index));
+  }
+
+  replace(target: Array<Any>, value: Any, index: number) {
+    this.transaction?.queue.push(new Actions.UndoReplaceAction(target, value, index));
   }
 
   removeByIndex(target: Array<Any>, index: number) {

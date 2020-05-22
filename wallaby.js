@@ -28,7 +28,11 @@ module.exports = function (wallaby) {
         // jsx: "react",
         // plugins: [{ transform: "tsx-control-statements" }],
         presets: ['next/babel'],
-        plugins: ['jsx-control-statements', ['@babel/plugin-proposal-decorators', { legacy: true }]]
+        plugins: [
+          'jsx-control-statements',
+          ['@babel/plugin-proposal-decorators', { legacy: true }],
+          ['@babel/plugin-proposal-class-properties', { loose: true }]
+        ]
       })
     },
     workers: {
@@ -47,6 +51,8 @@ module.exports = function (wallaby) {
           url: 'http://localhost'
         });
       }
+
+      console.log(wallaby.projectCacheDir);
 
       const mocha = wallaby.testFramework;
       mocha.suite.on('pre-require', function () {

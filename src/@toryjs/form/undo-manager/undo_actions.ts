@@ -11,7 +11,9 @@ export class UndoAction<T = Any> implements IHistoryAction {
     private key: keyof T,
     private redoValue: Any,
     private undoValue: Any
-  ) {}
+  ) {
+    this.redo();
+  }
 
   undo() {
     if (this.undoValue == null) {
@@ -82,6 +84,23 @@ export class UndoInsertAction implements IHistoryAction {
 
   redo() {
     this.target.splice(this.index, 0, this.value);
+  }
+}
+
+export class UndoReplaceAction implements IHistoryAction {
+  originalValue: Any;
+
+  constructor(private target: Array<Any>, private value: Any, private index: number) {
+    this.redo();
+  }
+
+  undo() {
+    this.target[this.index] = this.originalValue;
+  }
+
+  redo() {
+    this.originalValue = this.target[this.index];
+    this.target[this.index] = this.value;
   }
 }
 

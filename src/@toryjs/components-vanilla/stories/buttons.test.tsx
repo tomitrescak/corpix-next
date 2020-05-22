@@ -1,5 +1,6 @@
 import { testElement, fireEvent, create } from './common';
 import { ButtonProps } from '../buttons_view';
+import sinon from 'sinon';
 
 const createButton = create<ButtonProps>('Button');
 
@@ -12,8 +13,8 @@ describe('Vanilla > Buttons', () => {
     expect(root.getByText('Button')).toHaveAttribute('type', 'Custom Type');
   });
 
-  it('allows to click with string specified handler', () => {
-    const fn = mock.fn();
+  it.only('allows to click with string specified handler', () => {
+    const fn = sinon.spy();
     const handlers = {
       click: () => fn()
     };
@@ -23,7 +24,7 @@ describe('Vanilla > Buttons', () => {
 
     fireEvent.click(button);
 
-    expect(fn).toHaveBeenCalled();
+    sinon.assert.calledOnce(fn);
   });
 
   it('allows to click with string specified handler', () => {

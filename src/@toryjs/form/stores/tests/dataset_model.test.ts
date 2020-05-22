@@ -1,5 +1,5 @@
 import { autorun } from 'mobx';
-import { buildDataModel } from '../dataset_builder';
+import { buildDataModel } from '../../builders/dataset_builder';
 import { JSONSchema } from '../../json_schema';
 
 describe('DataModel', () => {
@@ -113,6 +113,7 @@ describe('DataModel', () => {
 
   it('creates default reactive data', () => {
     const model = buildDataModel<TestType>({}, schema);
+    console.log(model.toJS());
 
     expect(model.getValue('address').getValue('street')).toBeUndefined();
     expect(model.getValue('cars')).toHaveLength(0);
@@ -164,7 +165,7 @@ describe('DataModel', () => {
         fn();
       }
     });
-    model.setValue('address.street', 'new address');
+    model.setValue('address.street' as Any, 'new address');
     expect(model.getValue('address.street')).toBe('new address');
     expect(model.address!.street).toBe('new address');
     expect(fn).toHaveBeenCalledTimes(1);
