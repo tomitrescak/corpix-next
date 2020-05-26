@@ -27,16 +27,25 @@ const Drag = styled.div`
 
 const Box = styled.div<Props>``;
 
+const HBox = styled.div<Props>`
+  display: flex;
+  align-items: center;
+`;
+
+const Handler = styled.div`
+  background: blue;
+  width: 10px;
+  height: 20px;
+  cursor: grab;
+
+  .active {
+    cursor: grabbing;
+  }
+`;
+
 const BoxItem = styled.div`
   background: salmon;
-`;
-
-const BoxItem2 = styled.div`
-  background: orange;
-`;
-
-const BoxItem3 = styled.div`
-  background: yellow;
+  flex: 1;
 `;
 
 const Container = styled.div`
@@ -72,14 +81,27 @@ const Level: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dnd }) =
   return (
     <>
       {items.map((item, index) => (
-        <Box key={index} {...dnd.props(item, items)}>
+        <div key={index} {...dnd.props(item, items)}>
           <BoxItem>{item.title}</BoxItem>
           {item.children && (
             <Container>
               <Level items={item.children} dnd={dnd} />
             </Container>
           )}
-        </Box>
+        </div>
+      ))}
+    </>
+  );
+});
+
+const WithHandler: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dnd }) => {
+  return (
+    <>
+      {items.map((item, index) => (
+        <HBox key={index} {...dnd.props(item, items, true)}>
+          <Handler {...dnd.handlerProps} />
+          <BoxItem>{item.title}</BoxItem>
+        </HBox>
       ))}
     </>
   );
@@ -95,6 +117,20 @@ export const Vertical = () => {
   return (
     <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
       <Level items={items} dnd={dnd} />
+    </Drag>
+  );
+};
+
+export const Handlers = () => {
+  const container = React.useRef<HTMLDivElement | null>(null);
+  const dnd = React.useMemo(() => new Dnd(), []);
+  React.useEffect(() => {
+    dnd.init(container.current);
+  }, []);
+
+  return (
+    <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
+      <WithHandler items={items} dnd={dnd} />
     </Drag>
   );
 };
@@ -136,25 +172,36 @@ class Dnd {
     }
   }
 
-  staticProps = {
+  handlerProps = {
+    onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
+      (e.currentTarget.parentNode as HTMLDivElement).setAttribute('draggable', 'true');
+    },
+    onMouseOut(e: React.MouseEvent<HTMLDivElement>) {
+      (e.currentTarget.parentNode as HTMLDivElement).removeAttribute('draggable');
+    }
+  };
+
+  elementHandlerProps = {
     onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
       e.currentTarget.setAttribute('draggable', 'true');
     },
     onMouseOut(e: React.MouseEvent<HTMLDivElement>) {
       e.currentTarget.removeAttribute('draggable');
-    },
+    }
+  };
 
+  staticProps = {
     onDragEnd: (e: React.DragEvent) => {
       const item = e.target as HTMLDivElement;
       item.style.opacity = '1';
-      item.style.display = 'block';
+      item.style.display = '';
       item.style.cursor = 'inherit';
       this.rootElement.classList.remove('animated');
       this.clear();
     },
 
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
+      //e.preventDefault();
       e.stopPropagation();
 
       e.dataTransfer.dropEffect = 'move';
@@ -181,16 +228,18 @@ class Dnd {
     }
   };
 
-  props(item: Any, owner: Any[]) {
+  props(item: Any, owner: Any[], handler = false) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     return {
       onDragStart: (e: React.DragEvent) => {
         e.stopPropagation();
-
         e.dataTransfer.effectAllowed = 'move';
+
+        document.documentElement.ondragover = e => e.preventDefault();
 
         const targetItem = e.target as HTMLDivElement;
         this.height = targetItem.offsetHeight + 2;
+        targetItem.classList.add('active');
 
         window.requestAnimationFrame(() => {
           targetItem.style.display = 'none';
@@ -223,7 +272,8 @@ class Dnd {
           );
         }
       },
-      ...this.staticProps
+      ...this.staticProps,
+      ...(handler ? {} : this.elementHandlerProps)
     };
   }
 }
