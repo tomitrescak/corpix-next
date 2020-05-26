@@ -30,7 +30,9 @@ export class UndoMapAction implements IHistoryAction {
     private key: string,
     private redoValue: Any,
     private undoValue: Any
-  ) {}
+  ) {
+    this.redo();
+  }
 
   undo() {
     this.target.set(this.key, this.undoValue);
@@ -38,6 +40,25 @@ export class UndoMapAction implements IHistoryAction {
 
   redo() {
     this.target.set(this.key, this.redoValue);
+  }
+}
+
+export class UndoMapObjectAction implements IHistoryAction {
+  constructor(
+    private target: Any,
+    private key: string,
+    private redoValue: Any,
+    private undoValue: Any
+  ) {
+    this.redo();
+  }
+
+  undo() {
+    this.target[this.key] = this.undoValue;
+  }
+
+  redo() {
+    this.target[this.key] = this.redoValue;
   }
 }
 

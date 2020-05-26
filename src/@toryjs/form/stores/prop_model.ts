@@ -146,7 +146,7 @@ export class PropModel extends DataSet<PropModel> {
       prop: this,
       schema: schema
     });
-    this.undoManager.set(this, 'sourceSchema', schema);
+    this.setRawValue('sourceSchema', schema);
   }
 
   @transaction

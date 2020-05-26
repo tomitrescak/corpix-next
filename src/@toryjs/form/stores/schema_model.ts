@@ -165,21 +165,21 @@ export class SchemaModel extends DataSet<SchemaModel> {
     if (this._properties == null) {
       this._properties = {};
     }
-    this.undoManager.set(this.properties!, schema.title!, new SchemaModel(schema, this));
+    this.objectSetValue('properties', schema.title!, new SchemaModel(schema, this));
   }
 
   @transaction
   removeSchema(element: SchemaModel) {
     for (let key of Object.keys(this.properties!)) {
       if (this._properties![key] === element) {
-        this.undoManager.set(this.properties!, key!, null);
+        this.objectSetValue('properties', key, null);
         return;
       }
     }
 
     for (let key of Object.keys(this.definitions!)) {
       if (this._properties![key] === element) {
-        this.undoManager.set(this.properties!, key!, null);
+        this.objectSetValue('properties', key!, null);
         return;
       }
     }

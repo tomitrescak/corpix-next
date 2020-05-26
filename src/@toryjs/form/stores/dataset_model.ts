@@ -67,6 +67,12 @@ export class DataSet<T = Any> {
   }
 
   @transaction
+  objectSetValue(key: Any, mapKey: string, value: Any): void {
+    const { owner, path } = this.resolvePath(key);
+    this.undoManager.objectSet(owner.getItem(path), mapKey, value);
+  }
+
+  @transaction
   setDirty(value: boolean) {
     const root = this.getRoot();
     if (root != this) {

@@ -124,7 +124,7 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
   removePropReferences(prop: PropModel) {
     const invalidReferences = this.schemaReferences.filter(f => f.prop == prop);
     for (let reference of invalidReferences) {
-      this.undoManager.removeByValue(this.schemaReferences, reference);
+      this.removeRow('schemaReferences', reference);
     }
   }
 
@@ -132,7 +132,7 @@ export class FormModel<P = Any> extends DataSet<FormModel<Any>> {
   removeElementReferences(element: FormModel) {
     const invalidReferences = this.schemaReferences.filter(f => f.element == element);
     for (let reference of invalidReferences) {
-      this.undoManager.removeByValue(this.schemaReferences, reference);
+      this.removeRow('schemaReferences', reference);
     }
   }
 

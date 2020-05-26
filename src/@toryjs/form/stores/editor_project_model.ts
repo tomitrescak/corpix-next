@@ -43,7 +43,6 @@ export class EditorProjectModel extends DataSet<EditorProjectModel> {
         this.state.selectedComponent = this.form.components[0];
       }
     }
-
     this.undoManager.clear();
   }
 

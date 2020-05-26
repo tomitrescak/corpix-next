@@ -69,7 +69,10 @@ export class UndoManager {
 
   mapSet(target: Map<string, string>, key: string, value: Any) {
     this.transaction?.queue.push(new Actions.UndoMapAction(target, key, value, target.get(key)));
-    target.set(key, value);
+  }
+
+  objectSet(target: Any, key: string, value: Any) {
+    this.transaction?.queue.push(new Actions.UndoMapObjectAction(target, key, value, target[key]));
   }
 
   push<B>(target: Array<B>, value: B) {
