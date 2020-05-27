@@ -72,6 +72,10 @@ const items = observable([
   { title: 'O' }
 ]);
 
+const items2 = observable([{ title: 'I2' }, { title: 'J2' }, { title: 'K2' }]);
+
+const items3 = observable([{ title: 'L3' }, { title: 'M3' }, { title: 'N3' }]);
+
 const Level: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dnd }) => {
   return (
     <>
@@ -153,6 +157,53 @@ export const WithParenting = () => {
     <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
       <Level items={items} dnd={dnd} />
     </Drag>
+  );
+};
+
+export const MultipleLists = () => {
+  const container1 = React.useRef<HTMLDivElement | null>(null);
+  const container2 = React.useRef<HTMLDivElement | null>(null);
+  const container3 = React.useRef<HTMLDivElement | null>(null);
+
+  const dnd1 = React.useMemo(() => new Dnd(), []);
+  const dnd2 = React.useMemo(() => new Dnd(), []);
+  const dnd3 = React.useMemo(() => new Dnd(), []);
+
+  React.useEffect(() => {
+    dnd1.init(container1.current);
+    dnd2.init(container2.current);
+    dnd3.init(container3.current);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex' }}>
+      <Drag id="0" ref={container1} style={{ flex: 1, padding: '6px' }}>
+        [1] Accepts 2, 3
+        <Level items={items} dnd={dnd1} />
+      </Drag>
+      <Drag id="0" ref={container2} style={{ flex: 1, padding: '6px' }}>
+        [2] Accepts 3, Drop
+        <Level items={items2} dnd={dnd2} />
+      </Drag>
+      <Drag id="0" ref={container3} style={{ flex: 1, padding: '6px' }}>
+        [3] Accepts Drop
+        <Level items={items3} dnd={dnd3} />
+      </Drag>
+      <div style={{ flex: 1, padding: '6px' }}>
+        <div
+          style={{ width: '50px', height: '50px', margin: '16px', background: 'blue' }}
+          draggable={true}
+        >
+          OK
+        </div>
+        <div
+          style={{ width: '50px', height: '50px', margin: '16px', background: 'red' }}
+          draggable={true}
+        >
+          NOK
+        </div>
+      </div>
+    </div>
   );
 };
 
