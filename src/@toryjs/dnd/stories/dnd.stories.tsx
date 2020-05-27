@@ -76,7 +76,7 @@ const Level: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dnd }) =
   return (
     <>
       {items.map((item, index) => (
-        <div key={item.title} {...dnd.props(item, items)} data-dnd="droppable">
+        <div key={item.title} {...dnd.props(item, items)}>
           <BoxItem>{item.title}</BoxItem>
           {item.children && (
             <Container>
@@ -132,7 +132,19 @@ export const Handlers = () => {
 
 export const WithParenting = () => {
   const container = React.useRef<HTMLDivElement | null>(null);
-  const dnd = React.useMemo(() => new Dnd({ allowParenting: true }), []);
+  const dnd = React.useMemo(
+    () =>
+      new Dnd({
+        allowParenting: true,
+        add(to, item) {
+          if (to.children == null) {
+            to.children = [];
+          }
+          to.children.push(item);
+        }
+      }),
+    []
+  );
   React.useEffect(() => {
     dnd.init(container.current);
   }, []);
@@ -157,15 +169,17 @@ type DndConfig = {
 
 type Options = {
   allowParenting?: boolean;
+  add?(to: Any, item: Any): void;
 };
 
 class Dnd {
   lastElement?: HTMLDivElement;
   height = 0;
   splitColor = '#444';
+  outlineStyle = '2px dotted #ccc';
   rootElement: HTMLDivElement = null as Any;
 
-  position?: 'top' | 'bottom' | 'midlle';
+  position?: 'top' | 'bottom' | 'middle';
   dragging?: boolean = false;
   avatar?: HTMLDivElement;
 
@@ -181,26 +195,10 @@ class Dnd {
 
   options: Options;
 
-  constructor(options: Options = {}) {
-    this.options = options;
-  }
-
-  init(element: HTMLDivElement | null) {
-    if (element == null) {
-      throw new Error('Dnd container does not exists');
-    }
-    this.rootElement = element;
-  }
-
-  clear(newElement?: Any) {
-    if (this.lastElement) {
-      this.lastElement.style.borderWidth = '0px';
-      this.lastElement.style.outline = '0px';
-    }
-    if (newElement) {
-      this.lastElement = newElement;
-    }
-  }
+  // preventions
+  lastClick = Date.now();
+  startPosition = 0;
+  mouseMoved = false;
 
   handlerProps = {
     onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
@@ -216,16 +214,22 @@ class Dnd {
     }
   };
 
+  // CONSTRUCTOR
+
+  constructor(options: Options = {}) {
+    this.options = options;
+  }
+
   props(item: Any, owner: Any[], handler = false) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     return {
-      onDragOver(e) {
-        e.preventDefault();
-      },
-      onDrop(e) {
-        console.log('dropped');
-      },
-      onMouseOver: (e: React.DragEvent<HTMLDivElement>) => {
+      // onDragOver(e) {
+      //   e.preventDefault();
+      // },
+      // onDrop(e) {
+      //   console.log('dropped');
+      // },
+      onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
 
         if (this.dragging == false) {
@@ -236,31 +240,9 @@ class Dnd {
         this.overItemParent = owner;
         this.overItemElement = e.currentTarget;
 
-        const child = e.currentTarget;
-        const rect = child.getBoundingClientRect();
-        const y = Math.floor(e.clientY - rect.top); //y position within the element.
-        const border = rect.height < 16 ? rect.height / 2 : 8;
-
-        console.log(`${y} - ${rect.height} - ${border}`);
-
-        if (y < border) {
-          this.clear(child);
-          child.style.borderTop = `${this.height}px solid ${this.splitColor}`;
-          this.position = 'top';
-        } else if (y > rect.height - border) {
-          this.position = 'bottom';
-          if (child.nextSibling) {
-            this.clear(child.nextSibling);
-            (child.nextSibling as HTMLDivElement).style.borderTop = `${this.height}px solid ${this.splitColor}`;
-          } else {
-            this.clear(child);
-            child.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
-          }
-        } else {
-          this.clear(child);
-          console.log('middle');
-          child.style.outline = '2px dotted black';
-          this.position = 'midlle';
+        // more efficient for simple lists
+        if (!this.options.allowParenting) {
+          this.calculateBorders(e as Any, e.currentTarget);
         }
       },
       onMouseOut: () => {
@@ -272,7 +254,17 @@ class Dnd {
         event.stopPropagation();
         event.preventDefault();
 
-        // WE MAY LIMIT TO HANDLERS
+        // PREVENT DOUBLE CLICKS
+
+        if (Date.now() - this.lastClick < 300) {
+          this.lastClick = Date.now();
+          return;
+        }
+        this.lastClick = Date.now();
+        this.startPosition = event.clientY;
+        this.mouseMoved = false;
+
+        // WE MAY LIMIT TO HANDLERS WHICH HANDLE THEIR OWN MOUSE EVENTS
 
         if (handler && !this.handlerPressed) {
           return;
@@ -280,22 +272,24 @@ class Dnd {
 
         // CREATE CLONE
 
-        const ball = event.currentTarget.cloneNode(true) as HTMLDivElement;
-        ball.style.width = event.currentTarget.offsetWidth + 'px';
-        ball.style.height = event.currentTarget.offsetHeight + 'px';
+        const avatar = event.currentTarget.cloneNode(true) as HTMLDivElement;
+        avatar.style.width = event.currentTarget.offsetWidth + 'px';
+        avatar.style.height = event.currentTarget.offsetHeight + 'px';
 
         let originalX = event.currentTarget.getBoundingClientRect().left;
         // let shiftX = event.clientX - originalX;
         let shiftY = event.clientY - event.currentTarget.getBoundingClientRect().top;
 
-        ball.style.position = 'absolute';
-        ball.style.zIndex = '1000';
-        ball.style.left = originalX + 'px';
-        ball.style.pointerEvents = 'none';
+        avatar.style.position = 'absolute';
+        avatar.style.zIndex = '1000';
+        avatar.style.left = originalX + 'px';
+        avatar.style.pointerEvents = 'none';
         document.body.style.cursor = 'grabbing';
 
-        this.avatar = ball;
-        document.body.append(ball);
+        this.avatar = avatar;
+        document.body.append(avatar);
+
+        // MOUSE EVENTS FOR AVATAR
 
         const moveAt = (pageX: number, pageY: number) => {
           // ball.style.left = pageX - shiftX + 'px';
@@ -304,6 +298,19 @@ class Dnd {
 
         const onMouseMove = (event: MouseEvent) => {
           moveAt(event.pageX, event.pageY);
+
+          if (Math.abs(event.clientY - this.startPosition) > 2) {
+            this.mouseMoved = true;
+          }
+
+          if (this.overItemElement == null) {
+            this.clear();
+            return;
+          }
+
+          if (this.options.allowParenting) {
+            this.calculateBorders(event, this.overItemElement);
+          }
         };
 
         const onMouseUp = (e: MouseEvent) => {
@@ -319,17 +326,23 @@ class Dnd {
           document.removeEventListener('mouseup', onMouseUp);
           document.body.style.cursor = '';
 
+          // IF WE DID NOT MOVE THE MOUSE WE STOP
+
+          if (this.mouseMoved == false) {
+            this.cleanup();
+          }
+          this.mouseMoved = false;
+
           // WE REPLACE THE ELEMENT, OR WE CANCEL OPERATION
 
           if (this.overItemElement != null) {
             // FINAL ANIMATION
 
-            ball.style.transition = '0.2s ease-in-out';
+            avatar.style.transition = '0.2s ease-in-out';
             const bounds = this.overItemElement!.getBoundingClientRect();
 
             let top = 0;
             if (this.position === 'bottom') {
-              console.log(this.height);
               top = bounds.top + this.height;
             } else {
               top = bounds.top;
@@ -340,7 +353,8 @@ class Dnd {
 
             // WHEN ANIMATION FNISHES DROP
 
-            const { dragItemParent, dragItem, overItemParent, position, avatar, overItem } = this;
+            const { dragItemParent, dragItem, overItemParent, position, overItem } = this;
+
             setTimeout(() => {
               if (dragItemParent != null) {
                 if (overItem == null) {
@@ -354,22 +368,28 @@ class Dnd {
                   const fromIndex = dragItemParent!.findIndex(e => e === dragItem);
                   dragItemParent!.splice(fromIndex, 1);
 
-                  // add to the new position
-                  const toIndex =
-                    overItemParent.findIndex((e: Any) => e === overItem) +
-                    (position === 'bottom' ? 1 : 0);
-                  overItemParent.splice(toIndex, 0, dragItem);
+                  if (this.position === 'middle') {
+                    if (this.options.add == null) {
+                      throw new Error(
+                        'If you allow parenting, you have to define the add function'
+                      );
+                    }
+                    // add to item
+                    this.options.add(overItem, dragItem);
+                  } else {
+                    // add to the new position
+                    const toIndex =
+                      overItemParent.findIndex((e: Any) => e === overItem) +
+                      (position === 'bottom' ? 1 : 0);
+                    overItemParent.splice(toIndex, 0, dragItem);
+                  }
 
-                  document.body.removeChild(avatar!);
-                  this.dragElement!.style.display = '';
-                  this.clear();
+                  this.cleanup();
                 })();
               }
             }, 250);
           } else {
-            this.dragElement!.style.display = '';
-            document.body.removeChild(this.avatar!);
-            this.clear();
+            this.cleanup();
           }
         };
 
@@ -379,34 +399,90 @@ class Dnd {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
 
-        ball.ondragstart = function () {
+        avatar.ondragstart = function () {
           return false;
         };
 
         this.dragElement = event.currentTarget as HTMLDivElement;
         this.height = this.dragElement.offsetHeight;
-
-        window.requestAnimationFrame(() => {
-          this.dragElement!.style.display = 'none';
-
-          // add initial border
-          if (this.dragElement?.nextSibling) {
-            this.lastElement = this.dragElement.nextSibling as HTMLDivElement;
-            this.lastElement.style.borderTop = `${this.height}px solid ${this.splitColor}`;
-          } else if (this.dragElement?.previousSibling) {
-            this.lastElement = this.dragElement.previousSibling as HTMLDivElement;
-            this.lastElement.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
-          }
-
-          window.requestAnimationFrame(() => {
-            this.rootElement.classList.add('animated');
-          });
-        });
-
         this.dragging = true;
         this.dragItem = item;
         this.dragItemParent = owner;
+
+        this.dragElement!.style.display = 'none';
+
+        // add initial border
+        if (this.dragElement?.nextSibling) {
+          this.lastElement = this.dragElement.nextSibling as HTMLDivElement;
+          this.lastElement.style.borderTop = `${this.height}px solid ${this.splitColor}`;
+        } else if (this.dragElement?.previousSibling) {
+          this.lastElement = this.dragElement.previousSibling as HTMLDivElement;
+          this.lastElement.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
+        }
+
+        window.requestAnimationFrame(() => {
+          this.rootElement.classList.add('animated');
+        });
       }
     };
+  }
+
+  // PRIVATE METHODS
+
+  private calculateBorders(event: MouseEvent, child: HTMLDivElement) {
+    const rect = child.getBoundingClientRect();
+    const y = Math.floor(event.clientY - rect.top); //y position within the element.
+    const height = child.clientHeight;
+    const border = height < 10 ? height / 2 : 5;
+
+    if (y < border) {
+      if (!this.options.allowParenting || this.position !== 'top') {
+        this.clear(child);
+        child.style.borderTop = `${this.height}px solid ${this.splitColor}`;
+        this.position = 'top';
+      }
+    } else if (y > height - border) {
+      if (!this.options.allowParenting || this.position !== 'bottom') {
+        this.position = 'bottom';
+        if (child.nextSibling) {
+          this.clear(child.nextSibling);
+          (child.nextSibling as HTMLDivElement).style.borderTop = `${this.height}px solid ${this.splitColor}`;
+        } else {
+          this.clear(child);
+          child.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
+        }
+      }
+    } else if (this.options.allowParenting) {
+      if (this.position != 'middle') {
+        this.clear(child);
+        child.style.outline = this.outlineStyle;
+        this.position = 'middle';
+      }
+    }
+  }
+
+  init(element: HTMLDivElement | null) {
+    if (element == null) {
+      throw new Error('Dnd container does not exists');
+    }
+    this.rootElement = element;
+  }
+
+  private clear(newElement?: Any) {
+    if (this.lastElement) {
+      this.lastElement.style.borderWidth = '0px';
+      this.lastElement.style.outline = '0px';
+    }
+    if (newElement) {
+      this.lastElement = newElement;
+    }
+  }
+
+  private cleanup() {
+    if (document.body.childNodes[document.body.childNodes.length - 1] === this.avatar) {
+      document.body.removeChild(this.avatar!);
+    }
+    this.dragElement!.style.display = '';
+    this.clear();
   }
 }
