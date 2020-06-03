@@ -1,9 +1,9 @@
-import React, { MouseEventHandler } from 'react';
-import { action, observable } from 'mobx';
+import React from 'react';
+import { observable } from 'mobx';
 
-import { ToryFormContext } from '@toryjs/form';
 import styled from '@emotion/styled';
 import { observer } from 'mobx-react';
+import { Dnd } from '../index';
 
 export default {
   title: 'Vanilla/Dnd'
@@ -79,7 +79,7 @@ const items3 = observable([{ title: 'L3' }, { title: 'M3' }, { title: 'N3' }]);
 const Level: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dnd }) => {
   return (
     <>
-      {items.map((item, index) => (
+      {items.map(item => (
         <div key={item.title} {...dnd.props(item, items)}>
           <BoxItem>{item.title}</BoxItem>
           {item.children && (
@@ -107,38 +107,30 @@ const WithHandler: React.FC<{ items: Item[]; dnd: Dnd }> = observer(({ items, dn
 });
 
 export const Vertical = () => {
-  const container = React.useRef<HTMLDivElement | null>(null);
   const dnd = React.useMemo(() => new Dnd(), []);
-  React.useEffect(() => {
-    dnd.init(container.current);
-  }, []);
 
   return (
-    <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
+    <Drag id="0" onDragOver={e => e.preventDefault()} data-dnd="container">
       <Level items={items} dnd={dnd} />
     </Drag>
   );
 };
 
 export const Handlers = () => {
-  const container = React.useRef<HTMLDivElement | null>(null);
   const dnd = React.useMemo(() => new Dnd(), []);
-  React.useEffect(() => {
-    dnd.init(container.current);
-  }, [dnd]);
 
   return (
-    <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
+    <Drag id="0" onDragOver={e => e.preventDefault()} data-dnd="container">
       <WithHandler items={items} dnd={dnd} />
     </Drag>
   );
 };
 
 export const WithParenting = () => {
-  const container = React.useRef<HTMLDivElement | null>(null);
   const dnd = React.useMemo(
     () =>
       new Dnd({
+        id: '0',
         allowParenting: true,
         add(to, item) {
           if (to.children == null) {
@@ -149,43 +141,56 @@ export const WithParenting = () => {
       }),
     []
   );
-  React.useEffect(() => {
-    dnd.init(container.current);
-  }, []);
 
   return (
-    <Drag id="0" ref={container} onDragOver={e => e.preventDefault()}>
+    <Drag id="0" onDragOver={e => e.preventDefault()} data-dnd="container">
       <Level items={items} dnd={dnd} />
     </Drag>
   );
 };
 
 export const MultipleLists = () => {
-  const container1 = React.useRef<HTMLDivElement | null>(null);
-  const container2 = React.useRef<HTMLDivElement | null>(null);
-  const container3 = React.useRef<HTMLDivElement | null>(null);
-
-  const dnd1 = React.useMemo(() => new Dnd(), []);
-  const dnd2 = React.useMemo(() => new Dnd(), []);
-  const dnd3 = React.useMemo(() => new Dnd(), []);
-
-  React.useEffect(() => {
-    dnd1.init(container1.current);
-    dnd2.init(container2.current);
-    dnd3.init(container3.current);
-  }, []);
+  const dnd1 = React.useMemo(
+    () =>
+      new Dnd({
+        id: '1',
+        accepts: [{ id: '2' }]
+      }),
+    []
+  );
+  const dnd2 = React.useMemo(
+    () =>
+      new Dnd({
+        id: '2',
+        accepts: [{ id: '3' }, { id: 'drag' }],
+        allowHorizontalMove: true
+      }),
+    []
+  );
+  const dnd3 = React.useMemo(
+    () =>
+      new Dnd({
+        id: '3',
+        accepts: [
+          { id: '2', parse: e => ({ title: e.title + '-Parsed' }) },
+          { id: 'drag', parse: e => ({ title: e.title + '-Parsed' }) }
+        ],
+        allowHorizontalMove: true
+      }),
+    []
+  );
 
   return (
     <div style={{ display: 'flex' }}>
-      <Drag id="0" ref={container1} style={{ flex: 1, padding: '6px' }}>
+      <Drag id="0" style={{ flex: 1, padding: '6px' }} data-dnd="container">
         [1] Accepts 2, 3
         <Level items={items} dnd={dnd1} />
       </Drag>
-      <Drag id="0" ref={container2} style={{ flex: 1, padding: '6px' }}>
+      <Drag id="1" style={{ flex: 1, padding: '6px' }} data-dnd="container">
         [2] Accepts 3, Drop
         <Level items={items2} dnd={dnd2} />
       </Drag>
-      <Drag id="0" ref={container3} style={{ flex: 1, padding: '6px' }}>
+      <Drag id="2" style={{ flex: 1, padding: '6px' }} data-dnd="container">
         [3] Accepts Drop
         <Level items={items3} dnd={dnd3} />
       </Drag>
@@ -193,12 +198,27 @@ export const MultipleLists = () => {
         <div
           style={{ width: '50px', height: '50px', margin: '16px', background: 'blue' }}
           draggable={true}
+          onDragStart={ev => {
+            Dnd.height = 50;
+            Dnd.dragItem = { title: 'Blue' };
+            Dnd.dragId = 'drag';
+          }}
+          onDragEnd={e => {
+            dnd1.clear();
+            dnd2.clear();
+            dnd3.clear();
+          }}
         >
           OK
         </div>
         <div
           style={{ width: '50px', height: '50px', margin: '16px', background: 'red' }}
           draggable={true}
+          onDragStart={ev => {
+            Dnd.height = 50;
+            Dnd.dragItem = { title: 'Red' };
+            Dnd.dragId = 'drag';
+          }}
         >
           NOK
         </div>
@@ -206,334 +226,3 @@ export const MultipleLists = () => {
     </div>
   );
 };
-
-type DndElement = {
-  element: HTMLElement;
-  height: number;
-};
-
-type DndConfig = {
-  title: string;
-  id: string;
-  children: string;
-};
-
-type Options = {
-  allowParenting?: boolean;
-  add?(to: Any, item: Any): void;
-};
-
-class Dnd {
-  lastElement?: HTMLDivElement;
-  height = 0;
-  splitColor = '#444';
-  outlineStyle = '2px dotted #ccc';
-  rootElement: HTMLDivElement = null as Any;
-
-  position?: 'top' | 'bottom' | 'middle';
-  dragging?: boolean = false;
-  avatar?: HTMLDivElement;
-
-  dragElement?: HTMLDivElement;
-  dragItem?: Any;
-  dragItemParent?: Any[];
-
-  overItem?: Any;
-  overItemParent?: Any;
-
-  handlerPressed = false;
-  overItemElement?: HTMLDivElement;
-
-  options: Options;
-
-  // preventions
-  lastClick = Date.now();
-  startPosition = 0;
-  mouseMoved = false;
-
-  handlerProps = {
-    onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
-      if (this.dragging == false) {
-        e.currentTarget.style.cursor = 'grab';
-      }
-    },
-    onMouseOut: (e: React.MouseEvent<HTMLDivElement>) => {
-      e.currentTarget.style.cursor = '';
-    },
-    onMouseDown: () => {
-      this.handlerPressed = true;
-    }
-  };
-
-  // CONSTRUCTOR
-
-  constructor(options: Options = {}) {
-    this.options = options;
-  }
-
-  props(item: Any, owner: Any[], handler = false) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    return {
-      // onDragOver(e) {
-      //   e.preventDefault();
-      // },
-      // onDrop(e) {
-      //   console.log('dropped');
-      // },
-      onMouseOver: (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-
-        if (this.dragging == false) {
-          return;
-        }
-
-        this.overItem = item;
-        this.overItemParent = owner;
-        this.overItemElement = e.currentTarget;
-
-        // more efficient for simple lists
-        if (!this.options.allowParenting) {
-          this.calculateBorders(e as Any, e.currentTarget);
-        }
-      },
-      onMouseOut: () => {
-        this.overItem = undefined;
-        this.overItemParent = undefined;
-        this.overItemElement = undefined;
-      },
-      onMouseDown: (event: React.MouseEvent<HTMLDivElement>) => {
-        event.stopPropagation();
-        event.preventDefault();
-
-        // PREVENT DOUBLE CLICKS
-
-        if (Date.now() - this.lastClick < 300) {
-          this.lastClick = Date.now();
-          return;
-        }
-        this.lastClick = Date.now();
-        this.startPosition = event.clientY;
-        this.mouseMoved = false;
-
-        // WE MAY LIMIT TO HANDLERS WHICH HANDLE THEIR OWN MOUSE EVENTS
-
-        if (handler && !this.handlerPressed) {
-          return;
-        }
-
-        // CREATE CLONE
-
-        const avatar = event.currentTarget.cloneNode(true) as HTMLDivElement;
-        avatar.style.width = event.currentTarget.offsetWidth + 'px';
-        avatar.style.height = event.currentTarget.offsetHeight + 'px';
-
-        let originalX = event.currentTarget.getBoundingClientRect().left;
-        // let shiftX = event.clientX - originalX;
-        let shiftY = event.clientY - event.currentTarget.getBoundingClientRect().top;
-
-        avatar.style.position = 'absolute';
-        avatar.style.zIndex = '1000';
-        avatar.style.left = originalX + 'px';
-        avatar.style.pointerEvents = 'none';
-        document.body.style.cursor = 'grabbing';
-
-        this.avatar = avatar;
-        document.body.append(avatar);
-
-        // MOUSE EVENTS FOR AVATAR
-
-        const moveAt = (pageX: number, pageY: number) => {
-          // ball.style.left = pageX - shiftX + 'px';
-          this.avatar!.style.top = pageY - shiftY + 'px';
-        };
-
-        const onMouseMove = (event: MouseEvent) => {
-          moveAt(event.pageX, event.pageY);
-
-          if (Math.abs(event.clientY - this.startPosition) > 2) {
-            this.mouseMoved = true;
-          }
-
-          if (this.overItemElement == null) {
-            this.clear();
-            return;
-          }
-
-          if (this.options.allowParenting) {
-            this.calculateBorders(event, this.overItemElement);
-          }
-        };
-
-        const onMouseUp = (e: MouseEvent) => {
-          e.stopPropagation();
-
-          // CLEAR
-
-          this.rootElement.classList.remove('animated');
-          this.dragging = false;
-          this.handlerPressed = false;
-
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-          document.body.style.cursor = '';
-
-          // IF WE DID NOT MOVE THE MOUSE WE STOP
-
-          if (this.mouseMoved == false) {
-            this.cleanup();
-          }
-          this.mouseMoved = false;
-
-          // WE REPLACE THE ELEMENT, OR WE CANCEL OPERATION
-
-          if (this.overItemElement != null) {
-            // FINAL ANIMATION
-
-            avatar.style.transition = '0.2s ease-in-out';
-            const bounds = this.overItemElement!.getBoundingClientRect();
-
-            let top = 0;
-            if (this.position === 'bottom') {
-              top = bounds.top + this.height;
-            } else {
-              top = bounds.top;
-            }
-
-            this.avatar!.style.top = top + 'px';
-            this.avatar!.style.left = bounds.left + 'px';
-
-            // WHEN ANIMATION FNISHES DROP
-
-            const { dragItemParent, dragItem, overItemParent, position, overItem } = this;
-
-            setTimeout(() => {
-              if (dragItemParent != null) {
-                if (overItem == null) {
-                  return;
-                }
-
-                // REPLACE IN ORIGINAL ARRAY
-
-                action(() => {
-                  // remove from original position
-                  const fromIndex = dragItemParent!.findIndex(e => e === dragItem);
-                  dragItemParent!.splice(fromIndex, 1);
-
-                  if (this.position === 'middle') {
-                    if (this.options.add == null) {
-                      throw new Error(
-                        'If you allow parenting, you have to define the add function'
-                      );
-                    }
-                    // add to item
-                    this.options.add(overItem, dragItem);
-                  } else {
-                    // add to the new position
-                    const toIndex =
-                      overItemParent.findIndex((e: Any) => e === overItem) +
-                      (position === 'bottom' ? 1 : 0);
-                    overItemParent.splice(toIndex, 0, dragItem);
-                  }
-
-                  this.cleanup();
-                })();
-              }
-            }, 250);
-          } else {
-            this.cleanup();
-          }
-        };
-
-        moveAt(event.pageX, event.pageY);
-
-        // move the ball on mousemove
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-
-        avatar.ondragstart = function () {
-          return false;
-        };
-
-        this.dragElement = event.currentTarget as HTMLDivElement;
-        this.height = this.dragElement.offsetHeight;
-        this.dragging = true;
-        this.dragItem = item;
-        this.dragItemParent = owner;
-
-        this.dragElement!.style.display = 'none';
-
-        // add initial border
-        if (this.dragElement?.nextSibling) {
-          this.lastElement = this.dragElement.nextSibling as HTMLDivElement;
-          this.lastElement.style.borderTop = `${this.height}px solid ${this.splitColor}`;
-        } else if (this.dragElement?.previousSibling) {
-          this.lastElement = this.dragElement.previousSibling as HTMLDivElement;
-          this.lastElement.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
-        }
-
-        window.requestAnimationFrame(() => {
-          this.rootElement.classList.add('animated');
-        });
-      }
-    };
-  }
-
-  // PRIVATE METHODS
-
-  private calculateBorders(event: MouseEvent, child: HTMLDivElement) {
-    const rect = child.getBoundingClientRect();
-    const y = Math.floor(event.clientY - rect.top); //y position within the element.
-    const height = child.clientHeight;
-    const border = height < 10 ? height / 2 : 5;
-
-    if (y < border) {
-      if (!this.options.allowParenting || this.position !== 'top') {
-        this.clear(child);
-        child.style.borderTop = `${this.height}px solid ${this.splitColor}`;
-        this.position = 'top';
-      }
-    } else if (y > height - border) {
-      if (!this.options.allowParenting || this.position !== 'bottom') {
-        this.position = 'bottom';
-        if (child.nextSibling) {
-          this.clear(child.nextSibling);
-          (child.nextSibling as HTMLDivElement).style.borderTop = `${this.height}px solid ${this.splitColor}`;
-        } else {
-          this.clear(child);
-          child.style.borderBottom = `${this.height}px solid ${this.splitColor}`;
-        }
-      }
-    } else if (this.options.allowParenting) {
-      if (this.position != 'middle') {
-        this.clear(child);
-        child.style.outline = this.outlineStyle;
-        this.position = 'middle';
-      }
-    }
-  }
-
-  init(element: HTMLDivElement | null) {
-    if (element == null) {
-      throw new Error('Dnd container does not exists');
-    }
-    this.rootElement = element;
-  }
-
-  private clear(newElement?: Any) {
-    if (this.lastElement) {
-      this.lastElement.style.borderWidth = '0px';
-      this.lastElement.style.outline = '0px';
-    }
-    if (newElement) {
-      this.lastElement = newElement;
-    }
-  }
-
-  private cleanup() {
-    if (document.body.childNodes[document.body.childNodes.length - 1] === this.avatar) {
-      document.body.removeChild(this.avatar!);
-    }
-    this.dragElement!.style.display = '';
-    this.clear();
-  }
-}
