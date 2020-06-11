@@ -17,6 +17,7 @@ import {
 import { FormElement } from '@toryjs/form';
 import { ContainerProps, CommonComponentProps } from '@toryjs/form/form_definition';
 import { JSONSchema } from '@toryjs/form/json_schema';
+import { mount as mountC } from 'cypress-react-unit-test';
 
 export function create<P>(control: string) {
   return function (
@@ -72,11 +73,19 @@ export function testElement(options: TestProperties) {
   return result;
 }
 
+export function testElementC(options: TestProperties) {
+  mountC(renderFormElement(options));
+}
+
 export function testForm(options: TestProperties) {
   const result = render(renderForm(options));
   const original = result.debug;
   result.debug = (a, b, c) => original(a, b, { highlight: false, ...c });
   return result;
+}
+
+export function mount(element: Any) {
+  mountC(element);
 }
 
 export function testRender(element: Any) {

@@ -1,8 +1,12 @@
 import React from 'react';
 
 import { FormComponentProps, BoundType } from '@toryjs/form';
-import { ToryComponent, resolveComponentProps, sourceOfValueProp, valueOfProp } from '@toryjs/ui';
+import { ToryComponent, resolveComponentProps, styled, valueOfProp } from '@toryjs/ui';
 import { observer } from 'mobx-react';
+
+const Svg = styled.svg`
+  margin-right: 4px;
+`;
 
 export type CheckBoxProps = {
   checked: BoundType<boolean>;
@@ -19,6 +23,9 @@ export function parseChecked(checked: Any, value?: string) {
 
 export function onChangeHandler(props: FormComponentProps<CheckBoxProps>) {
   return function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (props.formElement.componentProps == null) {
+      return;
+    }
     const checkedSource = props.formElement.componentProps.checked.source;
     if (checkedSource == null) {
       console.error('You need to bind this control!');
@@ -39,7 +46,7 @@ export function onChangeHandler(props: FormComponentProps<CheckBoxProps>) {
 }
 
 export const CheckboxUnchecked: React.FC = props => (
-  <svg
+  <Svg
     {...props}
     data-role="checkbox"
     data-checked="false"
@@ -50,10 +57,10 @@ export const CheckboxUnchecked: React.FC = props => (
     fill="#425A70"
   >
     <path d="M22 2v20h-20v-20h20zm2-2h-24v24h24v-24z" />
-  </svg>
+  </Svg>
 );
 export const CheckboxChecked: React.FC = props => (
-  <svg
+  <Svg
     {...props}
     data-role="checkbox"
     data-checked="true"
@@ -65,7 +72,7 @@ export const CheckboxChecked: React.FC = props => (
     fill="#425A70"
   >
     <path d="M22 2v20h-20v-20h20zm2-2h-24v24h24v-24zm-6 16.538l-4.592-4.548 4.546-4.587-1.416-1.403-4.545 4.589-4.588-4.543-1.405 1.405 4.593 4.552-4.547 4.592 1.405 1.405 4.555-4.596 4.591 4.55 1.403-1.416z" />
-  </svg>
+  </Svg>
 );
 
 export const ReadonlyCheckbox: React.FC<FormComponentProps<CheckBoxProps>> = props => {

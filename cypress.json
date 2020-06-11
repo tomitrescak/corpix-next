@@ -1,6 +1,9 @@
 {
   "projectId": "corpix",
-  "testFiles": "**/*{test,spec}.{js,jsx,ts,tsx}",
+  "testFiles": "**/*{mm,spec}.{js,jsx,ts,tsx}",
   "experimentalComponentTesting": true,
-  "componentFolder": "src"
+  "componentFolder": "src",
+  "video": false,
+  "viewportWidth": 600,
+  "viewportHeight": 300
 }
