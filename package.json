@@ -30,7 +30,7 @@
     "evergreen-ui": "^4.27.4",
     "graphql": "^15.0.0",
     "isomorphic-unfetch": "^3.0.0",
-    "marked": "^1.0.0",
+    "marked": "^4.0.10",
     "micro-cors": "^0.1.1",
     "mobx": "^5.15.4",
     "mobx-react": "^6.2.2",
